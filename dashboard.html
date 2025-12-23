@@ -8,8 +8,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@google/generative-ai"></script>
-    <script>
+        <script type="module">
+            import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+            // Expose to window so app.js can access it
+            window.GoogleGenerativeAI = GoogleGenerativeAI;
+        </script>
+        <script>
       const firebaseConfig = {
         apiKey: "AIzaSyAGRkVamjyg5kzN9e7rpeIFx9ZfP1OxxZ4",
         authDomain: "openhub-d6fe7.firebaseapp.com",
@@ -41,6 +45,10 @@
             
             <!-- AI Features Section -->
             <div class="ai-features" style="margin-top: 10px; display: none;" id="aiSection">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong>AI Assistant</strong>
+                    <span id="aiStatus" style="font-size: 0.9em; color: #d9534f;">Loading...</span>
+                </div>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button class="ai-btn" onclick="generateSummary()" style="flex: 1; padding: 10px; font-size: 0.9em;">✨ AI Summary</button>
                     <button class="ai-btn" onclick="getSuggestions()" style="flex: 1; padding: 10px; font-size: 0.9em;">💡 Get Suggestions</button>

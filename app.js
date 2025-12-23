@@ -7,23 +7,36 @@ let model = null;
 
 function initializeAI() {
   const apiKey = GEMINI_API_KEY || localStorage.getItem("gemini_api_key");
-  if (apiKey) {
-    try {
-      genAI = window.GoogleGenerativeAI ? new window.GoogleGenerativeAI(apiKey) : null;
-      if (genAI) {
-        model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        showAISection();
-      }
-    } catch (error) {
-      console.log("AI features not available: Add Gemini API key to enable");
+  if (!apiKey) {
+    console.log("Gemini API key missing. Add via localStorage.setItem('gemini_api_key', '<key>')");
+    showAISection(false);
+    return;
+  }
+
+  try {
+    if (!window.GoogleGenerativeAI) {
+      console.log("GoogleGenerativeAI not loaded yet. Check network/ad-blockers.");
+      showAISection(false);
+      return;
     }
+
+    genAI = new window.GoogleGenerativeAI(apiKey);
+    model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    showAISection(true);
+  } catch (error) {
+    console.error("AI init failed:", error);
+    showAISection(false);
   }
 }
 
-function showAISection() {
+function showAISection(enabled = true) {
   const aiSection = document.getElementById("aiSection");
-  if (aiSection && model) {
-    aiSection.style.display = "block";
+  if (!aiSection) return;
+  aiSection.style.display = "block";
+  const statusEl = document.getElementById("aiStatus");
+  if (statusEl) {
+    statusEl.textContent = enabled ? "AI ready" : "Add API key to enable AI";
+    statusEl.style.color = enabled ? "#4caf50" : "#d9534f";
   }
 }
 
