@@ -6,27 +6,8 @@ let genAI = null;
 let model = null;
 
 function initializeAI() {
-  const apiKey = GEMINI_API_KEY || localStorage.getItem("gemini_api_key");
-  if (!apiKey) {
-    console.log("Gemini API key missing. Add via localStorage.setItem('gemini_api_key', '<key>')");
-    showAISection(false);
-    return;
-  }
-
-  try {
-    if (!window.GoogleGenerativeAI) {
-      console.log("GoogleGenerativeAI not loaded yet. Check network/ad-blockers.");
-      showAISection(false);
-      return;
-    }
-
-    genAI = new window.GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    showAISection(true);
-  } catch (error) {
-    console.error("AI init failed:", error);
-    showAISection(false);
-  }
+  // AI is now handled by serverless function - always show as ready
+  showAISection(true);
 }
 
 function showAISection(enabled = true) {
@@ -35,8 +16,8 @@ function showAISection(enabled = true) {
   aiSection.style.display = "block";
   const statusEl = document.getElementById("aiStatus");
   if (statusEl) {
-    statusEl.textContent = enabled ? "AI ready" : "Add API key to enable AI";
-    statusEl.style.color = enabled ? "#4caf50" : "#d9534f";
+    statusEl.textContent = "AI ready (server-side)";
+    statusEl.style.color = "#4caf50";
   }
 }
 
