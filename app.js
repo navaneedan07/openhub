@@ -100,28 +100,30 @@ async function generateSummary() {
     return;
   }
 
-  if (!model) {
-    alert("AI features not enabled. Add your Gemini API key.");
-    return;
-  }
-
   const aiOutput = document.getElementById("aiOutput");
   aiOutput.innerHTML = '<div class="ai-output-header">⏳ Generating Summary...</div>';
   aiOutput.style.display = "block";
 
   try {
-    const result = await model.generateContent(
-      `Summarize this idea in 2-3 sentences clearly and concisely:\n\n"${text}"`
-    );
-    const summary = await result.response.text();
+    const response = await fetch('/.netlify/functions/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: 'summary' }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
     
     aiOutput.innerHTML = `
       <div class="ai-output-header">✨ AI Summary</div>
-      <p>${escapeHtml(summary)}</p>
+      <p>${escapeHtml(data.result)}</p>
     `;
   } catch (error) {
     console.error("Summary error:", error);
-    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate summary. Check API key.</p>';
+    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate summary. Server error or API not configured.</p>';
   }
 }
 
@@ -133,42 +135,51 @@ async function getSuggestions() {
     return;
   }
 
-  if (!model) {
-    alert("AI features not enabled. Add your Gemini API key.");
-    return;
-  }
-
   const aiOutput = document.getElementById("aiOutput");
   aiOutput.innerHTML = '<div class="ai-output-header">⏳ Generating Suggestions...</div>';
   aiOutput.style.display = "block";
 
   try {
-    const result = await model.generateContent(
-      `For this college project/idea, provide 3 brief improvement suggestions:\n\n"${text}"\n\nFormat: Brief bullet points only.`
-    );
-    const suggestions = await result.response.text();
+    const response = await fetch('/.netlify/functions/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: 'suggestions' }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
     
     aiOutput.innerHTML = `
       <div class="ai-output-header">💡 AI Suggestions</div>
-      <p>${escapeHtml(suggestions)}</p>
+      <p>${escapeHtml(data.result)}</p>
     `;
   } catch (error) {
     console.error("Suggestions error:", error);
-    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate suggestions. Check API key.</p>';
+    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate suggestions. Server error or API not configured.</p>';
   }
 }
 
 async function moderateContent(text) {
-  if (!model) {
+  if (!model && !text) {
     return true; // Allow content if AI not available
   }
 
   try {
-    const result = await model.generateContent(
-      `Is this text appropriate for a college platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`
-    );
-    const response = await result.response.text();
-    return response.includes("YES");
+    const response = await fetch('/.netlify/functions/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: 'moderate' }),
+    });
+
+    if (!response.ok) {
+      return true; // Allow on server error
+    }
+
+    const data = await response.json();
+    return data.result.includes("YES");
   } catch (error) {
     console.error("Moderation error:", error);
     return true; // Allow on error
