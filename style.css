@@ -40,6 +40,46 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
+.ai-features {
+  background: #f0f4ff;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.ai-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ai-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 15px rgba(102, 126, 234, 0.4);
+}
+
+.ai-output {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.9em;
+  color: #333;
+  line-height: 1.5;
+}
+
+.ai-output-header {
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
 h1, h2 {
   color: #667eea;
   margin-bottom: 30px;

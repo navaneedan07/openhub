@@ -1,6 +1,32 @@
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Google AI Setup
+let genAI = null;
+let model = null;
+
+function initializeAI() {
+  const apiKey = GEMINI_API_KEY || localStorage.getItem("gemini_api_key");
+  if (apiKey) {
+    try {
+      genAI = window.GoogleGenerativeAI ? new window.GoogleGenerativeAI(apiKey) : null;
+      if (genAI) {
+        model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        showAISection();
+      }
+    } catch (error) {
+      console.log("AI features not available: Add Gemini API key to enable");
+    }
+  }
+}
+
+function showAISection() {
+  const aiSection = document.getElementById("aiSection");
+  if (aiSection && model) {
+    aiSection.style.display = "block";
+  }
+}
+
 // Check if user is on dashboard - verify authentication
 if (window.location.pathname.includes('dashboard.html')) {
   auth.onAuthStateChanged((user) => {
@@ -10,6 +36,7 @@ if (window.location.pathname.includes('dashboard.html')) {
     } else {
       // User is logged in, display user info
       displayUserInfo(user);
+      initializeAI();
       loadPosts();
     }
   });
@@ -52,6 +79,89 @@ function displayUserInfo(user) {
   }
 }
 
+async function generateSummary() {
+  const text = document.getElementById("postText").value.trim();
+  
+  if (!text) {
+    alert("Please write something to summarize!");
+    return;
+  }
+
+  if (!model) {
+    alert("AI features not enabled. Add your Gemini API key.");
+    return;
+  }
+
+  const aiOutput = document.getElementById("aiOutput");
+  aiOutput.innerHTML = '<div class="ai-output-header">⏳ Generating Summary...</div>';
+  aiOutput.style.display = "block";
+
+  try {
+    const result = await model.generateContent(
+      `Summarize this idea in 2-3 sentences clearly and concisely:\n\n"${text}"`
+    );
+    const summary = await result.response.text();
+    
+    aiOutput.innerHTML = `
+      <div class="ai-output-header">✨ AI Summary</div>
+      <p>${escapeHtml(summary)}</p>
+    `;
+  } catch (error) {
+    console.error("Summary error:", error);
+    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate summary. Check API key.</p>';
+  }
+}
+
+async function getSuggestions() {
+  const text = document.getElementById("postText").value.trim();
+  
+  if (!text) {
+    alert("Please write something to get suggestions!");
+    return;
+  }
+
+  if (!model) {
+    alert("AI features not enabled. Add your Gemini API key.");
+    return;
+  }
+
+  const aiOutput = document.getElementById("aiOutput");
+  aiOutput.innerHTML = '<div class="ai-output-header">⏳ Generating Suggestions...</div>';
+  aiOutput.style.display = "block";
+
+  try {
+    const result = await model.generateContent(
+      `For this college project/idea, provide 3 brief improvement suggestions:\n\n"${text}"\n\nFormat: Brief bullet points only.`
+    );
+    const suggestions = await result.response.text();
+    
+    aiOutput.innerHTML = `
+      <div class="ai-output-header">💡 AI Suggestions</div>
+      <p>${escapeHtml(suggestions)}</p>
+    `;
+  } catch (error) {
+    console.error("Suggestions error:", error);
+    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate suggestions. Check API key.</p>';
+  }
+}
+
+async function moderateContent(text) {
+  if (!model) {
+    return true; // Allow content if AI not available
+  }
+
+  try {
+    const result = await model.generateContent(
+      `Is this text appropriate for a college platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`
+    );
+    const response = await result.response.text();
+    return response.includes("YES");
+  } catch (error) {
+    console.error("Moderation error:", error);
+    return true; // Allow on error
+  }
+}
+
 function addPost() {
   const text = document.getElementById("postText").value.trim();
   
@@ -66,21 +176,33 @@ function addPost() {
     return;
   }
 
-  db.collection("posts").add({
-    text: text,
-    authorName: user.displayName || "Anonymous",
-    authorEmail: user.email,
-    authorId: user.uid,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    createdAt: new Date()
-  })
-  .then(() => {
-    // Clear the input field
-    document.getElementById("postText").value = "";
-  })
-  .catch((error) => {
-    alert("Error posting: " + error.message);
-    console.error(error);
+  // Check content before posting
+  moderateContent(text).then((isClean) => {
+    if (!isClean) {
+      alert("Your post contains inappropriate content. Please revise.");
+      return;
+    }
+
+    db.collection("posts").add({
+      text: text,
+      authorName: user.displayName || "Anonymous",
+      authorEmail: user.email,
+      authorId: user.uid,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date()
+    })
+    .then(() => {
+      // Clear the input field and AI output
+      document.getElementById("postText").value = "";
+      const aiOutput = document.getElementById("aiOutput");
+      if (aiOutput) {
+        aiOutput.style.display = "none";
+      }
+    })
+    .catch((error) => {
+      alert("Error posting: " + error.message);
+      console.error(error);
+    });
   });
 }
 
