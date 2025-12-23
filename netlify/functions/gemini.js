@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 exports.handler = async (event) => {
   // Only allow POST
   if (event.httpMethod !== 'POST') {
@@ -43,7 +41,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // Call Google Gemini API
+    // Call Google Gemini API using native fetch
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
