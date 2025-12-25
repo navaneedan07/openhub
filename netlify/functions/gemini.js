@@ -42,10 +42,10 @@ exports.handler = async (event) => {
     }
 
     // Call Google Gemini API using native fetch
-    // Use a supported Gemini model for generateContent. If Google bumps versions,
-    // update the model name accordingly (check ListModels response in logs).
+    // Use a stable, generally available model on the v1 endpoint.
+    // If Google changes availability, switch to a listed model from ListModels.
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
