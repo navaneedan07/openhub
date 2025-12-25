@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenHub - Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -23,12 +24,26 @@
       const GEMINI_API_KEY = localStorage.getItem("gemini_api_key") || "";
     </script>
 </head>
-<body style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px;">
+<body class="fullbleed" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
     <div class="dashboard-container">
-        <div class="header-top">
-            <h2>🎓 OpenHub Dashboard</h2>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
+                <div class="header-top">
+                        <h2 class="brand-title">🎓 OpenHub Dashboard</h2>
+                        <div class="header-actions">
+                            <a class="profile-avatar" href="profile.html" title="My Profile">
+                                <img id="avatarImgDash" alt="Profile" />
+                                <span id="avatarInitialDash" style="display:none;">U</span>
+                            </a>
+                            <button class="logout-btn" onclick="logout()">Logout</button>
+                        </div>
+                </div>
+                <nav class="top-nav">
+                    <a href="home.html">Home</a>
+                    <a href="events.html">Events</a>
+                    <a href="clubs.html">Clubs</a>
+                    <a href="resources.html">Resources</a>
+                    <a href="dashboard.html">Dashboard</a>
+                    <a href="profile.html">Profile</a>
+                </nav>
 
         <div class="user-info" id="userInfo" style="display: none;">
             <p>👤 Welcome, <span class="user-email" id="userName"></span></p>

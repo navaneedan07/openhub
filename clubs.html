@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OpenHub - Clubs</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -20,11 +21,15 @@
     firebase.initializeApp(firebaseConfig);
   </script>
 </head>
-<body style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px;">
+<body class="fullbleed" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
   <div class="dashboard-container">
     <div class="header-top">
-      <h2>🤝 Clubs & Societies</h2>
+      <h2 class="brand-title">🤝 Clubs & Societies</h2>
       <div class="header-actions">
+        <a class="profile-avatar" href="profile.html" title="My Profile">
+          <img id="avatarImgCl" alt="Profile" />
+          <span id="avatarInitialCl" style="display:none;">U</span>
+        </a>
         <a class="ghost-btn" href="home.html">Home</a>
         <button class="logout-btn" onclick="logout()">Logout</button>
       </div>

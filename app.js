@@ -30,6 +30,14 @@ if (window.location.pathname.includes('dashboard.html')) {
     } else {
       // User is logged in, display user info
       displayUserInfo(user);
+      // Set avatar in dashboard header
+      setProfileAvatar({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        _avatarImgId: 'avatarImgDash',
+        _avatarInitialId: 'avatarInitialDash'
+      });
       initializeAI();
       loadPosts();
     }
@@ -43,6 +51,7 @@ if (window.location.pathname.includes('home.html')) {
       window.location.href = "index.html";
     } else {
       displayUserInfo(user);
+      setProfileAvatar(user);
       loadPosts();
     }
   });
@@ -54,6 +63,13 @@ if (window.location.pathname.includes('events.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
+      setProfileAvatar({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        _avatarImgId: 'avatarImgEv',
+        _avatarInitialId: 'avatarInitialEv'
+      });
       loadEvents();
     }
   });
@@ -65,6 +81,13 @@ if (window.location.pathname.includes('clubs.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
+      setProfileAvatar({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        _avatarImgId: 'avatarImgCl',
+        _avatarInitialId: 'avatarInitialCl'
+      });
       loadClubs();
     }
   });
@@ -76,6 +99,13 @@ if (window.location.pathname.includes('resources.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
+      setProfileAvatar({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        _avatarImgId: 'avatarImgRes',
+        _avatarInitialId: 'avatarInitialRes'
+      });
       loadResources();
     }
   });
@@ -88,6 +118,13 @@ if (window.location.pathname.includes('profile.html')) {
       window.location.href = "index.html";
     } else {
       displayUserInfo(user);
+      setProfileAvatar({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        _avatarImgId: 'avatarImgProf',
+        _avatarInitialId: 'avatarInitialProf'
+      });
       loadUserProfile(user);
     }
   });
@@ -538,5 +575,24 @@ function escapeHtml(text) {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
+function setProfileAvatar(user) {
+  const imgId = user._avatarImgId || 'avatarImg';
+  const initialId = user._avatarInitialId || 'avatarInitial';
+  const img = document.getElementById(imgId);
+  const initial = document.getElementById(initialId);
+  if (!img || !initial) return;
+  const name = user.displayName || user.email || 'U';
+  const first = (name || 'U').trim().charAt(0).toUpperCase();
+  if (user.photoURL) {
+    img.src = user.photoURL;
+    img.style.display = 'block';
+    initial.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    initial.textContent = first || 'U';
+    initial.style.display = 'block';
+  }
 }
 
