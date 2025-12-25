@@ -32,7 +32,7 @@ body {
 }
 
 .dashboard-container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 20px;
   background: white;
@@ -240,6 +240,55 @@ button:active {
   margin-bottom: 30px;
 }
 
+/* Cards grid used on home page */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.card {
+  background: #f8f9ff;
+  border: 1px solid #e4e7fb;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.08);
+}
+
+.card h4 {
+  color: #4a5bdc;
+  margin-bottom: 6px;
+}
+
+.card p {
+  color: #666;
+  font-size: 0.95em;
+}
+
+/* Quick link list on home page */
+.quick-links {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  gap: 10px;
+  padding-left: 0;
+}
+
+.quick-links li a {
+  display: block;
+  background: #f8f9ff;
+  border: 1px solid #e4e7fb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #4a5bdc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.quick-links li a:hover {
+  background: #eef1ff;
+}
+
 .welcome-message {
   font-size: 1.2em;
   color: #667eea;
@@ -267,5 +316,13 @@ button:active {
 
   .dashboard-container {
     padding: 15px;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-links {
+    grid-template-columns: 1fr;
   }
 }
