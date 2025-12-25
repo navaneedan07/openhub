@@ -48,6 +48,51 @@ if (window.location.pathname.includes('home.html')) {
   });
 }
 
+// Events page
+if (window.location.pathname.includes('events.html')) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      loadEvents();
+    }
+  });
+}
+
+// Clubs page
+if (window.location.pathname.includes('clubs.html')) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      loadClubs();
+    }
+  });
+}
+
+// Resources page
+if (window.location.pathname.includes('resources.html')) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      loadResources();
+    }
+  });
+}
+
+// Profile page
+if (window.location.pathname.includes('profile.html')) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      displayUserInfo(user);
+      loadUserProfile(user);
+    }
+  });
+}
+
 function login() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider)
@@ -291,6 +336,182 @@ function loadPosts() {
       console.error("Error loading posts: ", error);
       document.getElementById("posts").innerHTML = '<div class="no-posts">Error loading posts. Please refresh.</div>';
     });
+}
+
+// ----- Additional loaders -----
+function loadEvents() {
+  const target = document.getElementById("eventsList");
+  if (!target) return;
+  db.collection("events").orderBy("date", "asc").limit(20).get()
+    .then((snap) => {
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      if (items.length === 0) {
+        renderEvents([
+          { title: "Tech Talk: AI Trends", when: "Friday, 4 PM", where: "Seminar Hall" },
+          { title: "Hackathon Prep Meetup", when: "Saturday, 11 AM", where: "Lab 2" },
+          { title: "Robotics Club Demo", when: "Tuesday, 1 PM", where: "Makerspace" },
+        ]);
+      } else {
+        renderEvents(items.map(e => ({ title: e.title, when: e.when || e.dateText || "", where: e.location || "" })));
+      }
+    })
+    .catch(() => {
+      renderEvents([
+        { title: "Tech Talk: AI Trends", when: "Friday, 4 PM", where: "Seminar Hall" },
+        { title: "Hackathon Prep Meetup", when: "Saturday, 11 AM", where: "Lab 2" },
+        { title: "Robotics Club Demo", when: "Tuesday, 1 PM", where: "Makerspace" },
+      ]);
+    });
+}
+
+function renderEvents(list) {
+  const target = document.getElementById("eventsList");
+  target.innerHTML = "";
+  list.forEach((e) => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `<h4>${escapeHtml(e.title)}</h4><p>${escapeHtml(e.when)} · ${escapeHtml(e.where)}</p>`;
+    target.appendChild(el);
+  });
+}
+
+function loadClubs() {
+  const target = document.getElementById("clubsList");
+  if (!target) return;
+  db.collection("clubs").orderBy("name", "asc").limit(50).get()
+    .then((snap) => {
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      if (items.length === 0) {
+        renderClubs([
+          { id: "dsc", name: "Developer Student Club", desc: "Build and learn together." },
+          { id: "ecell", name: "Entrepreneurship Cell", desc: "Startups, pitches, networking." },
+          { id: "cultural", name: "Cultural Committee", desc: "Events, festivals, performances." },
+        ]);
+      } else {
+        renderClubs(items.map(c => ({ id: c.id, name: c.name, desc: c.description || "" })));
+      }
+    })
+    .catch(() => {
+      renderClubs([
+        { id: "dsc", name: "Developer Student Club", desc: "Build and learn together." },
+        { id: "ecell", name: "Entrepreneurship Cell", desc: "Startups, pitches, networking." },
+        { id: "cultural", name: "Cultural Committee", desc: "Events, festivals, performances." },
+      ]);
+    });
+}
+
+function renderClubs(list) {
+  const target = document.getElementById("clubsList");
+  target.innerHTML = "";
+  list.forEach((c) => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `<h4>${escapeHtml(c.name)}</h4><p>${escapeHtml(c.desc)}</p>`;
+    const btn = document.createElement("button");
+    btn.textContent = "Join";
+    btn.style.marginTop = "8px";
+    btn.onclick = () => joinClub(c.id, c.name);
+    el.appendChild(btn);
+    target.appendChild(el);
+  });
+}
+
+function joinClub(clubId, clubName) {
+  const user = auth.currentUser;
+  if (!user) return;
+  db.collection("club_members").doc(`${clubId}_${user.uid}`).set({
+    clubId,
+    clubName,
+    userId: user.uid,
+    userEmail: user.email,
+    joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  }).then(() => {
+    alert(`Joined ${clubName}`);
+  }).catch((err) => alert(err.message));
+}
+
+function loadResources() {
+  const target = document.getElementById("resourcesList");
+  if (!target) return;
+  db.collection("resources").orderBy("title", "asc").limit(50).get()
+    .then((snap) => {
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      if (items.length === 0) {
+        renderResources([
+          { title: "Library Portal", url: "#" },
+          { title: "Lab Booking", url: "#" },
+          { title: "Placement Cell", url: "#" },
+          { title: "Exam Timetable", url: "#" },
+        ]);
+      } else {
+        renderResources(items.map(r => ({ title: r.title, url: r.url })));
+      }
+    })
+    .catch(() => {
+      renderResources([
+        { title: "Library Portal", url: "#" },
+        { title: "Lab Booking", url: "#" },
+        { title: "Placement Cell", url: "#" },
+        { title: "Exam Timetable", url: "#" },
+      ]);
+    });
+}
+
+function renderResources(list) {
+  const target = document.getElementById("resourcesList");
+  target.innerHTML = "";
+  list.forEach((r) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<a href="${r.url}" target="_blank">${escapeHtml(r.title)}</a>`;
+    target.appendChild(li);
+  });
+}
+
+function loadUserProfile(user) {
+  const postsTarget = document.getElementById("userPosts");
+  const clubsTarget = document.getElementById("userClubs");
+  if (postsTarget) {
+    db.collection("posts").where("authorId", "==", user.uid).orderBy("timestamp", "desc").limit(50).get()
+      .then((snap) => {
+        postsTarget.innerHTML = "";
+        if (snap.empty) {
+          postsTarget.innerHTML = '<div class="no-posts">No posts yet.</div>';
+          return;
+        }
+        snap.forEach((doc) => {
+          const data = doc.data();
+          const timestamp = data.timestamp ? data.timestamp.toDate() : new Date(data.createdAt);
+          const timeString = formatTime(timestamp);
+          const el = document.createElement("div");
+          el.className = "post";
+          el.innerHTML = `
+            <div class="post-text">${escapeHtml(data.text)}</div>
+            <div class="post-meta"><span class="post-author">👤 You</span><span>⏰ ${timeString}</span></div>
+          `;
+          postsTarget.appendChild(el);
+        });
+      });
+  }
+  if (clubsTarget) {
+    db.collection("club_members").where("userId", "==", user.uid).limit(50).get()
+      .then((snap) => {
+        clubsTarget.innerHTML = "";
+        if (snap.empty) {
+          clubsTarget.innerHTML = '<div class="no-posts">Not a member of any clubs yet.</div>';
+          return;
+        }
+        snap.forEach((doc) => {
+          const d = doc.data();
+          const el = document.createElement("div");
+          el.className = "card";
+          el.innerHTML = `<h4>${escapeHtml(d.clubName)}</h4><p>Joined</p>`;
+          clubsTarget.appendChild(el);
+        });
+      });
+  }
 }
 
 function formatTime(date) {

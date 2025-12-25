@@ -10,7 +10,7 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   color: #333;
 }
 
@@ -32,7 +32,8 @@ body {
 }
 
 .dashboard-container {
-  max-width: 1100px;
+  max-width: 1200px;
+  width: 95%;
   margin: 0 auto;
   padding: 20px;
   background: white;
@@ -240,6 +241,49 @@ button:active {
   margin-bottom: 30px;
 }
 
+/* Top navigation across pages */
+.top-nav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.top-nav a {
+  background: transparent;
+  color: #4a5bdc;
+  border: 2px solid #4a5bdc;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.top-nav a:hover {
+  background: #eef1ff;
+}
+
+.header-top .header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Secondary/ghost button for navigation links */
+.ghost-btn {
+  background: transparent;
+  color: #4a5bdc;
+  border: 2px solid #4a5bdc;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ghost-btn:hover {
+  background: #eef1ff;
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.25);
+}
+
 /* Cards grid used on home page */
 .card-grid {
   display: grid;
@@ -315,7 +359,11 @@ button:active {
   }
 
   .dashboard-container {
-    padding: 15px;
+    padding: 12px;
+  }
+
+  .top-nav {
+    gap: 8px;
   }
 
   .card-grid {
