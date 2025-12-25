@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenHub - Home</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAGRkVamjyg5kzN9e7rpeIFx9ZfP1OxxZ4",
+      authDomain: "openhub-d6fe7.firebaseapp.com",
+      projectId: "openhub-d6fe7",
+      storageBucket: "openhub-d6fe7.firebasestorage.app",
+      messagingSenderId: "542864747246",
+      appId: "1:542864747246:web:dd21353654f6bdffb4a1ff",
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px;">
+  <div class="dashboard-container">
+    <div class="header-top">
+      <h2>🏠 College Hub Home</h2>
+      <div style="display:flex; gap:8px;">
+        <a class="logout-btn" href="dashboard.html">Go to Dashboard</a>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="user-info" id="userInfo" style="display: none;">
+      <p>👋 Welcome, <span class="user-email" id="userName"></span></p>
+      <p id="userEmail" style="font-size: 0.95em; color: #666;"></p>
+    </div>
+
+    <!-- Announcements / Recent Posts -->
+    <section style="margin-top:16px;">
+      <h3 style="color:#667eea; margin-bottom:10px;">📢 Announcements</h3>
+      <div id="posts"></div>
+    </section>
+
+    <!-- Events -->
+    <section style="margin-top:24px;">
+      <h3 style="color:#667eea; margin-bottom:10px;">📅 Upcoming Events</h3>
+      <div class="card-grid">
+        <div class="card">
+          <h4>Tech Talk: AI Trends</h4>
+          <p>Friday, 4 PM · Seminar Hall</p>
+        </div>
+        <div class="card">
+          <h4>Hackathon Prep Meetup</h4>
+          <p>Saturday, 11 AM · Lab 2</p>
+        </div>
+        <div class="card">
+          <h4>Robotics Club Demo</h4>
+          <p>Tuesday, 1 PM · Makerspace</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clubs & Societies -->
+    <section style="margin-top:24px;">
+      <h3 style="color:#667eea; margin-bottom:10px;">🤝 Clubs & Societies</h3>
+      <div class="card-grid">
+        <div class="card">
+          <h4>Developer Student Club</h4>
+          <p>Build and learn together.</p>
+        </div>
+        <div class="card">
+          <h4>Entrepreneurship Cell</h4>
+          <p>Startups, pitches, networking.</p>
+        </div>
+        <div class="card">
+          <h4>Cultural Committee</h4>
+          <p>Events, festivals, performances.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resources -->
+    <section style="margin-top:24px;">
+      <h3 style="color:#667eea; margin-bottom:10px;">📚 Student Resources</h3>
+      <ul class="quick-links">
+        <li><a href="#" target="_blank">Library Portal</a></li>
+        <li><a href="#" target="_blank">Lab Booking</a></li>
+        <li><a href="#" target="_blank">Placement Cell</a></li>
+        <li><a href="#" target="_blank">Exam Timetable</a></li>
+      </ul>
+    </section>
+
+    <!-- Quick Actions -->
+    <section style="margin-top:24px;">
+      <h3 style="color:#667eea; margin-bottom:10px;">⚡ Quick Actions</h3>
+      <div style="display:flex; gap:10px;">
+        <a class="post-btn" href="dashboard.html" style="text-align:center;">✍️ Share an Idea</a>
+        <a class="post-btn" href="dashboard.html" style="text-align:center;">✨ Try AI Assistant</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

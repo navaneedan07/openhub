@@ -36,12 +36,24 @@ if (window.location.pathname.includes('dashboard.html')) {
   });
 }
 
+// Home page: show user info and recent announcements
+if (window.location.pathname.includes('home.html')) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      displayUserInfo(user);
+      loadPosts();
+    }
+  });
+}
+
 function login() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider)
     .then((result) => {
       // Successful login
-      window.location.href = "dashboard.html";
+      window.location.href = "home.html";
     })
     .catch((error) => {
       alert("Login failed: " + error.message);
@@ -140,6 +152,42 @@ async function getSuggestions() {
   } catch (error) {
     console.error("Suggestions error:", error);
     aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate suggestions. Server error or API not configured.</p>';
+  }
+}
+
+async function getOutline() {
+  const text = document.getElementById("postText").value.trim();
+
+  if (!text) {
+    alert("Please write something to outline!");
+    return;
+  }
+
+  const aiOutput = document.getElementById("aiOutput");
+  aiOutput.innerHTML = '<div class="ai-output-header">⏳ Creating Outline...</div>';
+  aiOutput.style.display = "block";
+
+  try {
+    const response = await fetch('/.netlify/functions/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: 'outline' }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    aiOutput.innerHTML = `
+      <div class="ai-output-header">📝 AI Outline</div>
+      <p>${escapeHtml(data.result)}</p>
+    `;
+  } catch (error) {
+    console.error("Outline error:", error);
+    aiOutput.innerHTML = '<div class="ai-output-header">❌ Error</div><p>Could not generate outline. Server error or API not configured.</p>';
   }
 }
 
