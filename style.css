@@ -324,10 +324,10 @@ button:active {
 /* Secondary/ghost button for navigation links */
 .ghost-btn {
   background: transparent;
-  color: #4a5bdc;
-  border: 2px solid #4a5bdc;
-  padding: 8px 16px;
-  border-radius: 8px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 6px 12px;
+  border-radius: 10px;
   font-weight: 600;
   text-decoration: none;
 }
@@ -335,6 +335,16 @@ button:active {
 .ghost-btn:hover {
   background: #eef1ff;
   box-shadow: 0 5px 20px rgba(102, 126, 234, 0.25);
+}
+
+.ghost-btn--solid {
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  color: #fff;
+  border: none;
+}
+
+.ghost-btn--solid:hover {
+  box-shadow: 0 6px 22px rgba(102, 126, 234, 0.35);
 }
 
 /* Cards grid used on home page */

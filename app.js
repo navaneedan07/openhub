@@ -589,6 +589,12 @@ function setProfileAvatar(user) {
     img.src = user.photoURL;
     img.style.display = 'block';
     initial.style.display = 'none';
+    // If image fails to load, fallback to initial
+    img.onerror = () => {
+      img.style.display = 'none';
+      initial.textContent = first || 'U';
+      initial.style.display = 'block';
+    };
   } else {
     img.style.display = 'none';
     initial.textContent = first || 'U';
