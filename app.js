@@ -51,7 +51,13 @@ if (window.location.pathname.includes('home.html')) {
       window.location.href = "index.html";
     } else {
       displayUserInfo(user);
-      setProfileAvatar(user);
+      setProfileAvatar({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+        _avatarImgId: 'avatarImg',
+        _avatarInitialId: 'avatarInitial'
+      });
       loadPosts();
     }
   });
