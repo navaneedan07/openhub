@@ -611,17 +611,42 @@ function setProfileAvatar(user) {
 
 // ==================== AI FEATURES ====================
 
-// Firebase Cloud Function for AI
-const generateAI = firebase.functions().httpsCallable('generateAIContent');
+// Google Generative AI Setup
+const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
 
 async function callGeminiAPI(prompt, mode) {
   try {
-    console.log(`Calling Firebase function for: ${mode}`);
-    const result = await generateAI({ prompt, mode });
-    console.log("Firebase function result:", result);
-    return result.data.data || null;
+    console.log(`Calling Gemini AI for: ${mode}`);
+    
+    const { GoogleGenerativeAI } = window;
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    let systemPrompt = "";
+    
+    switch (mode) {
+      case "summary":
+        systemPrompt = `Summarize this post in 2-3 sentences, making it more impactful and engaging:\n\n"${prompt}"`;
+        break;
+      case "suggestions":
+        systemPrompt = `As a college community expert, provide 3 actionable suggestions to improve this post for maximum engagement:\n\n"${prompt}"\n\nFormat as a numbered list.`;
+        break;
+      case "outline":
+        systemPrompt = `Create a better-structured outline for this post idea:\n\n"${prompt}"\n\nFormat as:\n- Main point\n  - Sub-point\n\nKeep it concise.`;
+        break;
+      case "search":
+        systemPrompt = `Search and provide relevant information about: "${prompt}"\n\nGive 3-4 key insights that would be helpful for a college community.`;
+        break;
+      default:
+        systemPrompt = prompt;
+    }
+
+    const result = await model.generateContent(systemPrompt);
+    const text = result.response.text();
+    console.log("Gemini API result:", text);
+    return text || null;
   } catch (error) {
-    console.error("Firebase function error:", error);
+    console.error("Gemini API error:", error);
     return null;
   }
 }
