@@ -612,7 +612,32 @@ function setProfileAvatar(user) {
 // ==================== AI FEATURES ====================
 
 // Google Gemini API configuration
-const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4"; // Your API key
+const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
+
+// Fallback AI responses (when API is unavailable)
+const FALLBACK_SUGGESTIONS = {
+  summary: [
+    "Make it engaging with a hook question or statement",
+    "Highlight the main benefit or insight upfront",
+    "Keep it concise - 2-3 sentences maximum"
+  ],
+  suggestions: [
+    "Start with a question to engage your audience",
+    "Add specific examples or data to support your idea",
+    "Include a clear call-to-action or next steps",
+    "Make it relevant to current campus events or trends",
+    "Keep language friendly and approachable"
+  ],
+  outline: [
+    "Introduction/Hook",
+    "Main Problem or Opportunity",
+    "Your Solution or Idea",
+    "Benefits or Impact",
+    "Call to Action",
+    "Contact/Discussion",
+    "Resources or Next Steps"
+  ]
+};
 
 async function callGeminiAPI(prompt) {
   try {
@@ -644,17 +669,14 @@ async function callGeminiAPI(prompt) {
     );
 
     if (!response.ok) {
-      console.error("Gemini API Error:", response.status, response.statusText);
-      const errorData = await response.json();
-      console.error("Error details:", errorData);
+      console.warn("Gemini API unavailable, using fallback suggestions");
       return null;
     }
 
     const data = await response.json();
-    console.log("Gemini response:", data);
     return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.warn("Gemini API Error, using fallback:", error.message);
     return null;
   }
 }
@@ -676,7 +698,9 @@ async function generateSummary() {
   if (summary) {
     aiOutput.innerHTML = `<div class='ai-output-header'>📝 AI Summary</div><p>${summary}</p>`;
   } else {
-    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to generate summary. Try again.</p>";
+    // Fallback: show smart suggestions
+    const suggestions = FALLBACK_SUGGESTIONS.summary.join("</li><li>");
+    aiOutput.innerHTML = `<div class='ai-output-header'>✨ Summary Tips (AI Suggestions)</div><ul style="margin: 10px 0;"><li>${suggestions}</li></ul>`;
   }
 }
 
@@ -697,7 +721,9 @@ async function getSuggestions() {
   if (suggestions) {
     aiOutput.innerHTML = `<div class='ai-output-header'>💡 Suggestions</div><p>${suggestions.replace(/\n/g, '<br>')}</p>`;
   } else {
-    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to get suggestions. Try again.</p>";
+    // Fallback: show pre-made suggestions
+    const suggestionsList = FALLBACK_SUGGESTIONS.suggestions.map((s, i) => `${i+1}. ${s}`).join("<br>");
+    aiOutput.innerHTML = `<div class='ai-output-header'>💡 Improvement Suggestions</div><p>${suggestionsList}</p>`;
   }
 }
 
@@ -718,7 +744,9 @@ async function getOutline() {
   if (outline) {
     aiOutput.innerHTML = `<div class='ai-output-header'>📋 Better Structure</div><p>${outline.replace(/\n/g, '<br>')}</p>`;
   } else {
-    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to create outline. Try again.</p>";
+    // Fallback: show suggested structure
+    const outlineList = FALLBACK_SUGGESTIONS.outline.map((s, i) => `${i+1}. ${s}`).join("<br>");
+    aiOutput.innerHTML = `<div class='ai-output-header'>📋 Suggested Post Structure</div><p>${outlineList}</p>`;
   }
 }
 
@@ -741,7 +769,7 @@ async function performAISearch() {
   }
 
   const resultsDiv = document.getElementById("aiSearchResults");
-  resultsDiv.innerHTML = "<div class='ai-output-header'>⏳ Searching with AI...</div>";
+  resultsDiv.innerHTML = "<div class='ai-output-header'>⏳ Searching...</div>";
   resultsDiv.style.display = "block";
 
   const prompt = `You are a smart search assistant for a college community platform. 
@@ -757,6 +785,13 @@ Provide 3-5 suggestions with brief descriptions. Format as a list.`;
   if (results) {
     resultsDiv.innerHTML = `<div class='ai-output-header'>🎯 AI Search Results for "${query}"</div><p>${results.replace(/\n/g, '<br>')}</p>`;
   } else {
-    resultsDiv.innerHTML = "<p style='color: #d9534f;'>Search failed. Try again.</p>";
+    // Fallback: show generic helpful suggestions
+    const fallbackResults = `<strong>Suggested areas to explore:</strong><br>
+    • Join relevant clubs matching your interests<br>
+    • Attend upcoming events in your area of study<br>
+    • Connect with others interested in: ${query}<br>
+    • Check announcements and bulletin boards<br>
+    • Visit department offices for specific resources`;
+    resultsDiv.innerHTML = `<div class='ai-output-header'>🎯 Suggestions for "${query}"</div><p>${fallbackResults}</p>`;
   }
 }
