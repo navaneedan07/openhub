@@ -76,6 +76,18 @@
         <p id="userEmail" style="font-size: 0.95em; color: #666;"></p>
       </div>
 
+      <!-- AI Smart Search Section -->
+      <section style="margin-top:16px;">
+        <div class="ai-features">
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="aiSearchBox" placeholder="🔍 Search with AI (clubs, events, posts...)" 
+                   style="flex: 1; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 0.95em;">
+            <button onclick="performAISearch()" style="padding: 12px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">🤖 AI Search</button>
+          </div>
+          <div id="aiSearchResults" style="display: none; margin-top: 10px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd; font-size: 0.9em;"></div>
+        </div>
+      </section>
+
     <!-- Announcements / Recent Posts -->
     <section style="margin-top:16px;">
       <h3 style="color:#667eea; margin-bottom:10px;">📢 Announcements</h3>

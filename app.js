@@ -609,3 +609,143 @@ function setProfileAvatar(user) {
   }
 }
 
+// ==================== AI FEATURES ====================
+
+// Google Gemini API endpoint
+const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4"; // Replace with your actual key
+
+async function callGeminiAPI(prompt) {
+  try {
+    const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      console.error("API Error:", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return null;
+  }
+}
+
+async function generateSummary() {
+  const postText = document.getElementById("postText").value;
+  if (!postText.trim()) {
+    alert("Please write something first!");
+    return;
+  }
+
+  const aiOutput = document.getElementById("aiOutput");
+  aiOutput.innerHTML = "<div class='ai-output-header'>⏳ Generating summary...</div>";
+  aiOutput.style.display = "block";
+
+  const prompt = `Summarize this post in 2-3 sentences, making it more impactful and engaging:\n\n"${postText}"`;
+  const summary = await callGeminiAPI(prompt);
+
+  if (summary) {
+    aiOutput.innerHTML = `<div class='ai-output-header'>📝 AI Summary</div><p>${summary}</p>`;
+  } else {
+    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to generate summary. Try again.</p>";
+  }
+}
+
+async function getSuggestions() {
+  const postText = document.getElementById("postText").value;
+  if (!postText.trim()) {
+    alert("Please write something first!");
+    return;
+  }
+
+  const aiOutput = document.getElementById("aiOutput");
+  aiOutput.innerHTML = "<div class='ai-output-header'>⏳ Analyzing...</div>";
+  aiOutput.style.display = "block";
+
+  const prompt = `As a college community expert, provide 3 actionable suggestions to improve this post for maximum engagement:\n\n"${postText}"\n\nFormat as a numbered list.`;
+  const suggestions = await callGeminiAPI(prompt);
+
+  if (suggestions) {
+    aiOutput.innerHTML = `<div class='ai-output-header'>💡 Suggestions</div><p>${suggestions.replace(/\n/g, '<br>')}</p>`;
+  } else {
+    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to get suggestions. Try again.</p>";
+  }
+}
+
+async function getOutline() {
+  const postText = document.getElementById("postText").value;
+  if (!postText.trim()) {
+    alert("Please write something first!");
+    return;
+  }
+
+  const aiOutput = document.getElementById("aiOutput");
+  aiOutput.innerHTML = "<div class='ai-output-header'>⏳ Creating outline...</div>";
+  aiOutput.style.display = "block";
+
+  const prompt = `Create a better-structured outline for this post idea:\n\n"${postText}"\n\nFormat as:\n- Main point\n  - Sub-point\n\nKeep it concise.`;
+  const outline = await callGeminiAPI(prompt);
+
+  if (outline) {
+    aiOutput.innerHTML = `<div class='ai-output-header'>📋 Better Structure</div><p>${outline.replace(/\n/g, '<br>')}</p>`;
+  } else {
+    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to create outline. Try again.</p>";
+  }
+}
+
+async function searchWithAI(query) {
+  if (!query.trim()) return [];
+
+  const prompt = `Given a search query: "${query}"\n\nFrom this list of posts, clubs, and events in a college community, find the most relevant ones (respond with just a JSON array of matching titles or descriptions)`;
+  const results = await callGeminiAPI(prompt);
+  
+  return results ? results.split("\n").filter(r => r.trim()) : [];
+}
+
+async function performAISearch() {
+  const searchBox = document.getElementById("aiSearchBox");
+  const query = searchBox.value.trim();
+  
+  if (!query) {
+    alert("Please enter a search query!");
+    return;
+  }
+
+  const resultsDiv = document.getElementById("aiSearchResults");
+  resultsDiv.innerHTML = "<div class='ai-output-header'>⏳ Searching with AI...</div>";
+  resultsDiv.style.display = "block";
+
+  const prompt = `You are a smart search assistant for a college community platform. 
+  
+Given the search query: "${query}"
+
+Suggest the most relevant clubs, events, resources, or discussion topics that would match this search in a college community. 
+
+Provide 3-5 suggestions with brief descriptions. Format as a list.`;
+
+  const results = await callGeminiAPI(prompt);
+
+  if (results) {
+    resultsDiv.innerHTML = `<div class='ai-output-header'>🎯 AI Search Results for "${query}"</div><p>${results.replace(/\n/g, '<br>')}</p>`;
+  } else {
+    resultsDiv.innerHTML = "<p style='color: #d9534f;'>Search failed. Try again.</p>";
+  }
+}
