@@ -24,30 +24,59 @@
       const GEMINI_API_KEY = localStorage.getItem("gemini_api_key") || "";
     </script>
 </head>
-<body class="fullbleed" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
-    <div class="dashboard-container">
-                <div class="header-top">
-                        <h2 class="brand-title">🎓 OpenHub Dashboard</h2>
-                        <div class="header-actions">
-                            <a class="profile-avatar" href="profile.html" title="My Profile">
-                                <img id="avatarImgDash" alt="Profile" />
-                                <span id="avatarInitialDash" style="display:none;">U</span>
-                            </a>
-                            <button class="logout-btn" onclick="logout()">Logout</button>
-                        </div>
-                </div>
-                <nav class="top-nav">
-                    <a href="home.html">Home</a>
-                    <a href="events.html">Events</a>
-                    <a href="clubs.html">Clubs</a>
-                    <a href="resources.html">Resources</a>
-                    <a href="dashboard.html">Dashboard</a>
-                    <a href="profile.html">Profile</a>
-                </nav>
+<body class="fullbleed">
+    <div class="layout-wrapper">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">🏠 OpenHub</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="home.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </a>
+                <a href="dashboard.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="events.html" class="nav-item">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Events</span>
+                </a>
+                <a href="clubs.html" class="nav-item">
+                    <span class="nav-icon">🤝</span>
+                    <span class="nav-text">Clubs</span>
+                </a>
+                <a href="resources.html" class="nav-item">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-text">Resources</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profile</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="logout-btn-sidebar" onclick="logout()">🚪 Logout</button>
+            </div>
+        </aside>
 
-        <div class="user-info" id="userInfo" style="display: none;">
-            <p>👤 Welcome, <span class="user-email" id="userName"></span></p>
-            <p id="userEmail" style="font-size: 0.95em; color: #666;"></p>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header-top">
+                <h2 class="brand-title">Dashboard</h2>
+                <div class="header-actions">
+                    <a class="profile-avatar" href="profile.html" title="My Profile">
+                        <img id="avatarImgDash" alt="Profile" />
+                        <span id="avatarInitialDash" style="display:none;">U</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="user-info" id="userInfo" style="display: none;">
+                <p>👤 Welcome, <span class="user-email" id="userName"></span></p>
+                <p id="userEmail" style="font-size: 0.95em; color: #666;"></p>
         </div>
 
         <div class="post-input-section">
@@ -72,6 +101,7 @@
 
         <h3 style="color: #667eea; margin-bottom: 20px;">Recent Ideas & Discussions</h3>
         <div id="posts"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>
