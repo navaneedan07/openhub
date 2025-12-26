@@ -613,15 +613,12 @@ function setProfileAvatar(user) {
 
 // Google Generative AI Setup
 const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
+const GEMINI_MODEL = "gemini-1.5-flash";
 
 async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
     
-    const { GoogleGenerativeAI } = window;
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     let systemPrompt = "";
     
     switch (mode) {
@@ -641,8 +638,39 @@ async function callGeminiAPI(prompt, mode) {
         systemPrompt = prompt;
     }
 
-    const result = await model.generateContent(systemPrompt);
-    const text = result.response.text();
+    // Use Gemini REST API directly
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: systemPrompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 500,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     console.log("Gemini API result:", text);
     return text || null;
   } catch (error) {
