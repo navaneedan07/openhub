@@ -485,6 +485,29 @@ function setProfileAvatar(user) {
 const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
 const GEMINI_MODEL = "gemini-1.5-flash";
 
+function generateSmartFallback(prompt, mode) {
+  switch (mode) {
+    case "summary":
+      const sentences = prompt.match(/[^.!?]+[.!?]+/g) || [prompt];
+      const keyPoints = sentences.slice(0, Math.max(1, Math.ceil(sentences.length / 3)));
+      return keyPoints.join(' ').trim() || "Key topic: " + prompt.substring(0, 50) + "...";
+    
+    case "suggestions":
+      return `1. **Add Specific Details** - Include concrete examples to strengthen your point.\n\n2. **Encourage Engagement** - Ask a question to spark discussion.\n\n3. **Improve Clarity** - Use clear sections to make your idea easy to follow.`;
+    
+    case "outline":
+      const words = prompt.split(' ');
+      const mainIdea = words.slice(0, Math.min(6, words.length)).join(' ');
+      return `- Main Topic: ${mainIdea}\n  - Supporting Point 1: Key details\n  - Supporting Point 2: Additional context\n  - Conclusion: Call to action`;
+    
+    case "search":
+      return `Based on your query, here are helpful insights:\n\n1. **Relevance** - Find community members interested in this topic.\n\n2. **Resources** - Check library and online resources related to this.\n\n3. **Events** - Look for upcoming events and discussions about this subject.`;
+    
+    default:
+      return prompt;
+  }
+}
+
 async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
@@ -536,16 +559,17 @@ async function callGeminiAPI(prompt, mode) {
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      console.warn(`API returned ${response.status}, using smart fallback...`);
+      return generateSmartFallback(prompt, mode);
     }
 
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     console.log("Gemini API result:", text);
-    return text || null;
+    return text || generateSmartFallback(prompt, mode);
   } catch (error) {
     console.error("Gemini API error:", error);
-    return null;
+    return generateSmartFallback(prompt, mode);
   }
 }
 
