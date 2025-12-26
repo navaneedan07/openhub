@@ -611,36 +611,47 @@ function setProfileAvatar(user) {
 
 // ==================== AI FEATURES ====================
 
-// Google Gemini API endpoint
-const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4"; // Replace with your actual key
+// Google Gemini API configuration
+const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4"; // Your API key
 
 async function callGeminiAPI(prompt) {
   try {
-    const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 500,
           }
-        ]
-      })
-    });
+        })
+      }
+    );
 
     if (!response.ok) {
-      console.error("API Error:", response.status);
+      console.error("Gemini API Error:", response.status, response.statusText);
+      const errorData = await response.json();
+      console.error("Error details:", errorData);
       return null;
     }
 
     const data = await response.json();
+    console.log("Gemini response:", data);
     return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
   } catch (error) {
     console.error("Gemini API Error:", error);
