@@ -484,6 +484,9 @@ function setProfileAvatar(user) {
 // Google Generative AI Setup
 const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
 const GEMINI_MODEL = "gemini-1.5-flash";
+// Optional: set a proxy URL (Cloudflare Worker) to avoid CORS
+// Example: window.GEMINI_PROXY_URL = "https://your-worker.example.workers.dev";
+const GEMINI_PROXY_URL = (typeof window !== 'undefined' && window.GEMINI_PROXY_URL) ? window.GEMINI_PROXY_URL : "";
 
 function generateSmartFallback(prompt, mode) {
   switch (mode) {
@@ -531,9 +534,27 @@ async function callGeminiAPI(prompt, mode) {
         systemPrompt = prompt;
     }
 
-    // Use Gemini REST API directly
+    // Prefer proxy if available (to bypass CORS)
+    if (GEMINI_PROXY_URL) {
+      try {
+        const proxyResp = await fetch(GEMINI_PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, mode })
+        });
+        if (proxyResp.ok) {
+          const proxyData = await proxyResp.json();
+          const text = proxyData.text || proxyData.result || "";
+          if (text) return text;
+        }
+        console.warn(`Proxy returned ${proxyResp.status}; falling back to direct API`);
+      } catch (e) {
+        console.warn("Proxy call failed; falling back to direct API", e);
+      }
+    }
+
+    // Direct Gemini REST API call (may be blocked by CORS on static hosts)
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-    
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -543,9 +564,7 @@ async function callGeminiAPI(prompt, mode) {
         contents: [
           {
             parts: [
-              {
-                text: systemPrompt
-              }
+              { text: systemPrompt }
             ]
           }
         ],
