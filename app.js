@@ -591,19 +591,29 @@ function setProfileAvatar(user) {
   if (!img || !initial) return;
   const name = user.displayName || user.email || 'U';
   const first = (name || 'U').trim().charAt(0).toUpperCase();
+  
+  // Always show initial first
+  initial.textContent = first || 'U';
+  initial.style.display = 'block';
+  
   if (user.photoURL) {
-    img.src = user.photoURL;
-    img.style.display = 'block';
-    initial.style.display = 'none';
-    // If image fails to load, fallback to initial
-    img.onerror = () => {
+    // Create a new image to preload
+    const preloadImg = new Image();
+    preloadImg.onload = () => {
+      // Image loaded successfully, show it
+      img.src = user.photoURL;
+      img.style.display = 'block';
+      initial.style.display = 'none';
+    };
+    preloadImg.onerror = () => {
+      // Image failed to load, keep showing initial
       img.style.display = 'none';
-      initial.textContent = first || 'U';
       initial.style.display = 'block';
     };
+    preloadImg.src = user.photoURL;
   } else {
+    // No photo URL, just show initial
     img.style.display = 'none';
-    initial.textContent = first || 'U';
     initial.style.display = 'block';
   }
 }
