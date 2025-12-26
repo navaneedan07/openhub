@@ -566,31 +566,44 @@ function setProfileAvatar(user) {
   const initialId = user._avatarInitialId || 'avatarInitial';
   const img = document.getElementById(imgId);
   const initial = document.getElementById(initialId);
-  if (!img || !initial) return;
+  
+  console.log(`Setting avatar for ${imgId}:`, { img: !!img, initial: !!initial, photoURL: user.photoURL });
+  
+  if (!img || !initial) {
+    console.error(`Avatar elements not found: ${imgId}, ${initialId}`);
+    return;
+  }
+  
   const name = user.displayName || user.email || 'U';
   const first = (name || 'U').trim().charAt(0).toUpperCase();
   
   // Always show initial first
   initial.textContent = first || 'U';
   initial.style.display = 'block';
+  img.parentElement.style.display = 'inline-flex'; // Make sure parent is visible
   
   if (user.photoURL) {
+    console.log('Loading photo from:', user.photoURL);
     // Create a new image to preload
     const preloadImg = new Image();
     preloadImg.onload = () => {
       // Image loaded successfully, show it
+      console.log('Photo loaded successfully');
       img.src = user.photoURL;
       img.style.display = 'block';
+      img.style.visibility = 'visible';
       initial.style.display = 'none';
     };
     preloadImg.onerror = () => {
       // Image failed to load, keep showing initial
+      console.log('Photo failed to load');
       img.style.display = 'none';
       initial.style.display = 'block';
     };
     preloadImg.src = user.photoURL;
   } else {
     // No photo URL, just show initial
+    console.log('No photoURL provided');
     img.style.display = 'none';
     initial.style.display = 'block';
   }
