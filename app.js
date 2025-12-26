@@ -611,72 +611,17 @@ function setProfileAvatar(user) {
 
 // ==================== AI FEATURES ====================
 
-// Google Gemini API configuration
-const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
+// Firebase Cloud Function for AI
+const generateAI = firebase.functions().httpsCallable('generateAIContent');
 
-// Fallback AI responses (when API is unavailable)
-const FALLBACK_SUGGESTIONS = {
-  summary: [
-    "Make it engaging with a hook question or statement",
-    "Highlight the main benefit or insight upfront",
-    "Keep it concise - 2-3 sentences maximum"
-  ],
-  suggestions: [
-    "Start with a question to engage your audience",
-    "Add specific examples or data to support your idea",
-    "Include a clear call-to-action or next steps",
-    "Make it relevant to current campus events or trends",
-    "Keep language friendly and approachable"
-  ],
-  outline: [
-    "Introduction/Hook",
-    "Main Problem or Opportunity",
-    "Your Solution or Idea",
-    "Benefits or Impact",
-    "Call to Action",
-    "Contact/Discussion",
-    "Resources or Next Steps"
-  ]
-};
-
-async function callGeminiAPI(prompt) {
+async function callGeminiAPI(prompt, mode) {
   try {
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 500,
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      console.warn("Gemini API unavailable, using fallback suggestions");
-      return null;
-    }
-
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    console.log(`Calling Firebase function for: ${mode}`);
+    const result = await generateAI({ prompt, mode });
+    console.log("Firebase function result:", result);
+    return result.data.data || null;
   } catch (error) {
-    console.warn("Gemini API Error, using fallback:", error.message);
+    console.error("Firebase function error:", error);
     return null;
   }
 }
@@ -692,15 +637,12 @@ async function generateSummary() {
   aiOutput.innerHTML = "<div class='ai-output-header'>⏳ Generating summary...</div>";
   aiOutput.style.display = "block";
 
-  const prompt = `Summarize this post in 2-3 sentences, making it more impactful and engaging:\n\n"${postText}"`;
-  const summary = await callGeminiAPI(prompt);
+  const summary = await callGeminiAPI(postText, "summary");
 
   if (summary) {
     aiOutput.innerHTML = `<div class='ai-output-header'>📝 AI Summary</div><p>${summary}</p>`;
   } else {
-    // Fallback: show smart suggestions
-    const suggestions = FALLBACK_SUGGESTIONS.summary.join("</li><li>");
-    aiOutput.innerHTML = `<div class='ai-output-header'>✨ Summary Tips (AI Suggestions)</div><ul style="margin: 10px 0;"><li>${suggestions}</li></ul>`;
+    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to generate summary. Please try again.</p>";
   }
 }
 
@@ -715,15 +657,12 @@ async function getSuggestions() {
   aiOutput.innerHTML = "<div class='ai-output-header'>⏳ Analyzing...</div>";
   aiOutput.style.display = "block";
 
-  const prompt = `As a college community expert, provide 3 actionable suggestions to improve this post for maximum engagement:\n\n"${postText}"\n\nFormat as a numbered list.`;
-  const suggestions = await callGeminiAPI(prompt);
+  const suggestions = await callGeminiAPI(postText, "suggestions");
 
   if (suggestions) {
     aiOutput.innerHTML = `<div class='ai-output-header'>💡 Suggestions</div><p>${suggestions.replace(/\n/g, '<br>')}</p>`;
   } else {
-    // Fallback: show pre-made suggestions
-    const suggestionsList = FALLBACK_SUGGESTIONS.suggestions.map((s, i) => `${i+1}. ${s}`).join("<br>");
-    aiOutput.innerHTML = `<div class='ai-output-header'>💡 Improvement Suggestions</div><p>${suggestionsList}</p>`;
+    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to get suggestions. Please try again.</p>";
   }
 }
 
@@ -738,15 +677,12 @@ async function getOutline() {
   aiOutput.innerHTML = "<div class='ai-output-header'>⏳ Creating outline...</div>";
   aiOutput.style.display = "block";
 
-  const prompt = `Create a better-structured outline for this post idea:\n\n"${postText}"\n\nFormat as:\n- Main point\n  - Sub-point\n\nKeep it concise.`;
-  const outline = await callGeminiAPI(prompt);
+  const outline = await callGeminiAPI(postText, "outline");
 
   if (outline) {
     aiOutput.innerHTML = `<div class='ai-output-header'>📋 Better Structure</div><p>${outline.replace(/\n/g, '<br>')}</p>`;
   } else {
-    // Fallback: show suggested structure
-    const outlineList = FALLBACK_SUGGESTIONS.outline.map((s, i) => `${i+1}. ${s}`).join("<br>");
-    aiOutput.innerHTML = `<div class='ai-output-header'>📋 Suggested Post Structure</div><p>${outlineList}</p>`;
+    aiOutput.innerHTML = "<p style='color: #d9534f;'>Failed to create outline. Please try again.</p>";
   }
 }
 
@@ -772,26 +708,11 @@ async function performAISearch() {
   resultsDiv.innerHTML = "<div class='ai-output-header'>⏳ Searching...</div>";
   resultsDiv.style.display = "block";
 
-  const prompt = `You are a smart search assistant for a college community platform. 
-  
-Given the search query: "${query}"
-
-Suggest the most relevant clubs, events, resources, or discussion topics that would match this search in a college community. 
-
-Provide 3-5 suggestions with brief descriptions. Format as a list.`;
-
-  const results = await callGeminiAPI(prompt);
+  const results = await callGeminiAPI(query, "search");
 
   if (results) {
     resultsDiv.innerHTML = `<div class='ai-output-header'>🎯 AI Search Results for "${query}"</div><p>${results.replace(/\n/g, '<br>')}</p>`;
   } else {
-    // Fallback: show generic helpful suggestions
-    const fallbackResults = `<strong>Suggested areas to explore:</strong><br>
-    • Join relevant clubs matching your interests<br>
-    • Attend upcoming events in your area of study<br>
-    • Connect with others interested in: ${query}<br>
-    • Check announcements and bulletin boards<br>
-    • Visit department offices for specific resources`;
-    resultsDiv.innerHTML = `<div class='ai-output-header'>🎯 Suggestions for "${query}"</div><p>${fallbackResults}</p>`;
+    resultsDiv.innerHTML = "<p style='color: #d9534f;'>Search failed. Please try again.</p>";
   }
 }
