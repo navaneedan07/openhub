@@ -36,14 +36,52 @@ if (window.location.pathname.includes('dashboard.html')) {
       // User not logged in, redirect to login
       window.location.href = "index.html";
     } else {
-      // User is logged in, display user info
-      displayUserInfo(user);
-      // Set avatar in dashboard header
-      setAvatarSafe(user, 'avatarImgDash', 'avatarInitialDash');
-      initializeAI();
-      loadPosts();
+      checkProfileCompletion(user).then(() => {
+        // User is logged in, display user info
+        displayUserInfo(user);
+        // Set avatar in dashboard header
+        setAvatarSafe(user, 'avatarImgDash', 'avatarInitialDash');
+        initializeAI();
+        loadPosts();
+      });
     }
   });
+}
+
+// Check if user has completed their profile
+async function checkProfileCompletion(user) {
+  // Skip check if already on profile page
+  if (window.location.pathname.includes('profile.html')) {
+    return;
+  }
+
+  try {
+    const profileDoc = await db.collection("profiles").doc(user.uid).get();
+    
+    if (!profileDoc.exists) {
+      // No profile document - redirect to profile page
+      alert("Please complete your profile to continue.");
+      window.location.href = "profile.html";
+      throw new Error("Profile incomplete");
+    }
+
+    const data = profileDoc.data();
+    const hasName = data.name && data.name.trim();
+    const hasDept = data.department && data.department.trim();
+    const hasYear = data.year && data.year.trim();
+
+    if (!hasName || !hasDept || !hasYear) {
+      // Profile incomplete - redirect to profile page
+      alert("Please complete your profile with Name, Department, and Year to continue.");
+      window.location.href = "profile.html";
+      throw new Error("Profile incomplete");
+    }
+  } catch (err) {
+    if (err.message !== "Profile incomplete") {
+      console.error("Error checking profile:", err);
+    }
+    throw err;
+  }
 }
 
 // Helper function to set avatar with DOM ready check
@@ -66,9 +104,11 @@ if (window.location.pathname.includes('home.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
-      displayUserInfo(user);
-      setAvatarSafe(user, 'avatarImg', 'avatarInitial');
-      loadPosts();
+      checkProfileCompletion(user).then(() => {
+        displayUserInfo(user);
+        setAvatarSafe(user, 'avatarImg', 'avatarInitial');
+        loadPosts();
+      });
     }
   });
 }
@@ -79,8 +119,10 @@ if (window.location.pathname.includes('events.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
-      setAvatarSafe(user, 'avatarImgEv', 'avatarInitialEv');
-      loadEvents();
+      checkProfileCompletion(user).then(() => {
+        setAvatarSafe(user, 'avatarImgEv', 'avatarInitialEv');
+        loadEvents();
+      });
     }
   });
 }
@@ -91,9 +133,11 @@ if (window.location.pathname.includes('clubs.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
-      setAvatarSafe(user, 'avatarImgCl', 'avatarInitialCl');
-      loadClubs();
-      showAdminImportIfAllowed(user);
+      checkProfileCompletion(user).then(() => {
+        setAvatarSafe(user, 'avatarImgCl', 'avatarInitialCl');
+        loadClubs();
+        showAdminImportIfAllowed(user);
+      });
     }
   });
 }
@@ -104,8 +148,10 @@ if (window.location.pathname.includes('resources.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
-      setAvatarSafe(user, 'avatarImgRes', 'avatarInitialRes');
-      loadResources();
+      checkProfileCompletion(user).then(() => {
+        setAvatarSafe(user, 'avatarImgRes', 'avatarInitialRes');
+        loadResources();
+      });
     }
   });
 }
@@ -124,7 +170,19 @@ if (window.location.pathname.includes('profile.html')) {
       
       if (isOwnProfile) {
         bindProfileForm(user);
-        loadProfileDetails(user);
+        loadProfileDetails(user).then(() => {
+          // Check if profile is incomplete and show edit form
+          db.collection("profiles").doc(user.uid).get().then(doc => {
+            if (!doc.exists || !doc.data().name || !doc.data().department || !doc.data().year) {
+              showProfileEditForm();
+              const msg = document.getElementById("profileSaveStatus");
+              if (msg) {
+                msg.textContent = "⚠️ Please complete your profile";
+                msg.style.color = "#d32f2f";
+              }
+            }
+          });
+        });
         loadUserProfile(user);
       } else {
         loadOtherUserProfile(viewUserId);
