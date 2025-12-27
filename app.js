@@ -898,6 +898,12 @@ function loadProfileDetails(user) {
       
       // Update display spans
       updateProfileDisplay(name, dept, year, reg);
+
+      // Update follower/following counts in header (defaults to 0)
+      const followerCountEl = document.getElementById("followerCount");
+      const followingCountEl = document.getElementById("followingCount");
+      if (followerCountEl) followerCountEl.textContent = String(data.followerCount || 0);
+      if (followingCountEl) followingCountEl.textContent = String(data.followingCount || 0);
     })
     .catch((err) => {
       console.error("Error loading profile details", err);
