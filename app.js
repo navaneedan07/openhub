@@ -1795,6 +1795,12 @@ function highlightMentions(text) {
 
 // Google Generative AI Setup
 const GEMINI_PROXY_URL = "/api/gemini";
+// Prefer cheaper / available models first; backend should honor `model` if supported.
+const GEMINI_MODEL_PREFERENCE = [
+  "models/gemini-2.0-flash-001",
+  "models/gemini-2.5-flash-lite",
+  "models/gemini-2.5-flash"
+];
 
 function generateSmartFallback(prompt, mode) {
   const text = (prompt || "").trim();
@@ -1835,7 +1841,8 @@ async function moderateContent(text) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text: `Is this text appropriate for a college community platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`,
-        mode: "moderate"
+        mode: "moderate",
+        model: GEMINI_MODEL_PREFERENCE[0]
       })
     });
 
@@ -1855,37 +1862,40 @@ async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
     const maxRetries = 2;
-    let attempt = 0;
     let lastStatus = 0;
 
-    while (attempt <= maxRetries) {
-      const proxyResp = await fetch(GEMINI_PROXY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: prompt, mode })
-      });
+    for (const model of GEMINI_MODEL_PREFERENCE) {
+      let attempt = 0;
+      while (attempt <= maxRetries) {
+        const proxyResp = await fetch(GEMINI_PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: prompt, mode, model })
+        });
 
-      lastStatus = proxyResp.status;
+        lastStatus = proxyResp.status;
 
-      if (proxyResp.ok) {
-        const proxyData = await proxyResp.json();
-        const text = proxyData.result || proxyData.text || "";
-        if (text) {
-          console.log("Gemini API result:", text);
-          return text;
+        if (proxyResp.ok) {
+          const proxyData = await proxyResp.json();
+          const text = proxyData.result || proxyData.text || "";
+          if (text) {
+            console.log("Gemini API result:", text, "via", model);
+            return text;
+          }
         }
-      }
 
-      // If rate limited or temporarily unavailable, back off and retry
-      if (lastStatus === 429 || lastStatus === 503) {
-        const delayMs = 600 * Math.pow(2, attempt); // 600ms, 1200ms, ...
-        await new Promise(res => setTimeout(res, delayMs));
-        attempt++;
-        continue;
-      }
+        // If rate limited or temporarily unavailable, back off and retry on same model
+        if (lastStatus === 429 || lastStatus === 503) {
+          const delayMs = 600 * Math.pow(2, attempt); // 600ms, 1200ms, ...
+          await new Promise(res => setTimeout(res, delayMs));
+          attempt++;
+          continue;
+        }
 
-      // Other errors: break and use fallback
-      break;
+        // Other errors: break to try next model
+        break;
+      }
+      // Try next model in preference order
     }
 
     console.warn(`API returned ${lastStatus}, using smart fallback...`);
