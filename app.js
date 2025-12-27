@@ -1282,6 +1282,13 @@ function saveProfileData(user, name, department, year, registrationNumber, photo
     .then(() => {
       setProfileStatus("Saved!", "#2e7d32");
       updateProfileDisplay(name, department, year, registrationNumber);
+      
+      // Update avatar immediately with the new photo
+      if (photoURL) {
+        const userWithPhoto = { ...user, photoURL: photoURL };
+        setProfileAvatar(userWithPhoto);
+      }
+      
       document.getElementById("profilePhoto").value = "";
       setTimeout(() => hideProfileEditForm(), 800);
     })
