@@ -19,6 +19,8 @@
       appId: "1:542864747246:web:dd21353654f6bdffb4a1ff",
     };
     firebase.initializeApp(firebaseConfig);
+    // No uploads on home; disable storage usage globally.
+    window.DISABLE_STORAGE_UPLOADS = true;
   </script>
 </head>
 <body class="fullbleed" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">

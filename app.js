@@ -294,10 +294,18 @@ function clearAttachmentInputs() {
 }
 
 async function uploadAttachment(file) {
-  // Fallback: if Storage is unavailable, allow image attachments by embedding
-  // a compressed base64 data URL directly in the post. Other file types should
-  // be attached via link.
-  if (!storage) {
+  // Respect optional runtime toggle to avoid Firebase Storage (CORS/billing)
+  const disableStorage = window.DISABLE_STORAGE_UPLOADS === true;
+
+  // If storage is unavailable or disabled, try Cloudinary, else base64 for images
+  if (!storage || disableStorage) {
+    try {
+      if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
+        return await uploadViaCloudinary(file);
+      }
+    } catch (cloudErr) {
+      console.warn('Cloudinary upload failed, falling back to base64 if image:', cloudErr);
+    }
     if (file.type && file.type.startsWith('image/')) {
       const base64 = await resizeImageToBase64(file, 1024, 0.8);
       if (!base64) throw new Error('Could not process image');
@@ -312,7 +320,7 @@ async function uploadAttachment(file) {
         attachmentType: 'image-base64'
       };
     }
-    throw new Error("File uploads require storage. Please attach a link instead.");
+    throw new Error("Uploads are disabled without Cloudinary. Attach a link instead.");
   }
 
   if (file.size > ATTACHMENT_SIZE_LIMIT) {
@@ -339,7 +347,14 @@ async function uploadAttachment(file) {
       attachmentType: "file"
     };
   } catch (err) {
-    console.warn('Storage upload failed, falling back to base64 if image:', err);
+    console.warn('Storage upload failed, trying Cloudinary:', err);
+    try {
+      if (window.CLOUDINARY_CLOUD_NAME && window.CLOUDINARY_UPLOAD_PRESET) {
+        return await uploadViaCloudinary(file);
+      }
+    } catch (cloudErr) {
+      console.warn('Cloudinary upload also failed:', cloudErr);
+    }
     if (file.type && file.type.startsWith('image/')) {
       const base64 = await resizeImageToBase64(file, 1024, 0.8);
       if (!base64) throw new Error('Could not process image');
