@@ -53,21 +53,12 @@ service cloud.firestore {
       allow write: if request.auth != null && (
         request.auth.uid == userId ||
         (
-          // Allow follower/following count adjustments of +/-1 by authenticated users
-          (
-            request.resource.data.diff(resource.data).changedKeys().hasOnly(['followerCount']) &&
-            (
-              request.resource.data.followerCount == ((resource.data.followerCount == null ? 0 : resource.data.followerCount) + 1) ||
-              request.resource.data.followerCount == ((resource.data.followerCount == null ? 0 : resource.data.followerCount) - 1)
-            )
-          ) ||
-          (
-            request.resource.data.diff(resource.data).changedKeys().hasOnly(['followingCount']) &&
-            (
-              request.resource.data.followingCount == ((resource.data.followingCount == null ? 0 : resource.data.followingCount) + 1) ||
-              request.resource.data.followingCount == ((resource.data.followingCount == null ? 0 : resource.data.followingCount) - 1)
-            )
-          )
+          // Allow followerCount/followingCount modifications by any authenticated user
+          // (must change ONLY one of these fields, not multiple fields at once)
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['followerCount'])
+        ) ||
+        (
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['followingCount'])
         )
       );
     }
