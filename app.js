@@ -1222,6 +1222,7 @@ function saveProfileDetails() {
     department,
     year,
     registrationNumber,
+    photoURL: user.photoURL || "",
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   }, { merge: true })
     .then(() => {
@@ -1401,6 +1402,8 @@ async function loadOtherUserProfile(userId) {
       reg = data.registrationNumber || "";
       followerCount = data.followerCount || 0;
       followingCount = data.followingCount || 0;
+      photoURL = data.photoURL || null;
+      displayName = name;
     } else {
       // Profile doesn't exist - try to get basic info from posts
       const postsSnap = await db.collection("posts").where("authorId", "==", userId).limit(1).get();
@@ -1416,13 +1419,14 @@ async function loadOtherUserProfile(userId) {
         department: "",
         year: "",
         registrationNumber: "",
+        photoURL: null,
         followerCount: 0,
         followingCount: 0,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     }
 
-    // Set other user's avatar
+    // Set other user's avatar with their photoURL
     setProfileAvatar({
       displayName: displayName || name,
       email: "",
