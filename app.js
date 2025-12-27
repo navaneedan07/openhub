@@ -1301,7 +1301,7 @@ async function findSimilarUsersFor(userId) {
   }
 
   const mine = await getUserInterests(userId);
-  const weights = { tags: 0.7, clubs: 0.3 };
+  const weights = { tags: 0.6, clubs: 0.4 };
 
   const scored = [];
   // Compute similarity; cap to 60 candidates for demo perf
@@ -1310,10 +1310,13 @@ async function findSimilarUsersFor(userId) {
     const other = await getUserInterests(otherId);
     const tagSim = jaccardSimilarity(mine.tags, other.tags);
     const clubSim = jaccardSimilarity(mine.clubs, other.clubs);
+    // Include even if partial match (one of tags or clubs has overlap, or both exist)
     const score = weights.tags * tagSim + weights.clubs * clubSim;
-    if (score > 0) scored.push({ userId: otherId, score, tagSim, clubSim });
+    // Include all candidates, even weak matches
+    scored.push({ userId: otherId, score, tagSim, clubSim });
   }
 
+  // Sort by score descending, but keep weak matches if strong ones are missing
   scored.sort((a, b) => b.score - a.score);
 
   // Enrich with display names (best effort)
@@ -1345,48 +1348,69 @@ async function findSimilarUsersFor(userId) {
 
 async function renderSimilarPeopleSection(currentUser) {
   try {
+    console.log("Starting renderSimilarPeopleSection for", currentUser.uid);
     const suggestions = await findSimilarUsersFor(currentUser.uid);
-    const container = document.getElementById("contentOverview") || document.getElementById("profileDisplayCard") || document.body;
+    console.log("Found suggestions:", suggestions.length);
+
+    // Target the profile display card or create section after it
+    let container = document.getElementById("profileDisplayCard");
+    if (!container) {
+      container = document.getElementById("contentOverview");
+    }
+    if (!container) {
+      console.warn("No profile container found, using body");
+      container = document.body;
+    }
 
     // Create or reuse section
     let section = document.getElementById("similarPeopleSection");
     if (!section) {
       section = document.createElement("div");
       section.id = "similarPeopleSection";
-      section.style.marginTop = "16px";
+      section.style.marginTop = "24px";
+      section.style.padding = "16px";
+      section.style.backgroundColor = "#f8f9ff";
+      section.style.borderRadius = "8px";
       container.appendChild(section);
+      console.log("Created similarPeopleSection, appended to", container.id);
     }
 
     if (!suggestions.length) {
       section.innerHTML = `
         <div class="ai-output-header">👥 People With Similar Interests</div>
-        <div style="color:#666;">We couldn't find matches yet. Try adding tags to your posts or joining clubs.</div>
+        <div style="color:#666; margin-top:8px;">We couldn't find matches yet. Try adding tags to your posts or joining clubs.</div>
       `;
+      console.log("No suggestions, showing fallback message");
       return;
     }
 
+    console.log("Rendering", suggestions.length, "suggestions");
     let html = `<div class="ai-output-header">👥 People With Similar Interests</div>`;
-    html += `<div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+    html += `<div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">`;
     suggestions.forEach(s => {
       const overlapPct = Math.round(s.score * 100);
       html += `
-        <div class="card" style="min-width:220px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <div style="width:36px; height:36px; border-radius:50%; background:#e4e7fb; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-              ${s.photoURL ? `<img src="${s.photoURL}" alt="${escapeHtml(s.name)}" style="width:36px; height:36px; object-fit:cover;" />` : `<span style="color:#667eea; font-weight:700;">${escapeHtml((s.name||'U').charAt(0).toUpperCase())}</span>`}
+        <div class="card" style="min-width:220px; flex:1; min-width:200px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <div style="width:40px; height:40px; border-radius:50%; background:#e4e7fb; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+              ${s.photoURL ? `<img src="${s.photoURL}" alt="${escapeHtml(s.name)}" style="width:40px; height:40px; object-fit:cover;" />` : `<span style="color:#667eea; font-weight:700; font-size:18px;">${escapeHtml((s.name||'U').charAt(0).toUpperCase())}</span>`}
             </div>
-            <div style="font-weight:600;">${escapeHtml(s.name)}</div>
+            <div>
+              <div style="font-weight:600; color:#333;">${escapeHtml(s.name)}</div>
+              <div style="font-size:12px; color:#667eea;">Match: ${overlapPct}%</div>
+            </div>
           </div>
-          <div style="font-size:12px; color:#667eea; margin-top:6px;">Match: ${overlapPct}% · Tags ${Math.round(s.tagSim*100)}% · Clubs ${Math.round(s.clubSim*100)}%</div>
-          <div style="margin-top:8px; display:flex; gap:8px;">
-            <button class="ghost-btn" onclick="window.location.href='profile.html?userId=${s.userId}'">View Profile</button>
-            <button class="ghost-btn" onclick="followUser('${s.userId}')">Follow</button>
+          <div style="font-size:11px; color:#999; margin-bottom:8px;">Tags ${Math.round(s.tagSim*100)}% · Clubs ${Math.round(s.clubSim*100)}%</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="ghost-btn" onclick="window.location.href='profile.html?userId=${s.userId}'" style="flex:1; min-width:100px; font-size:12px; padding:6px;">View</button>
+            <button class="ghost-btn" onclick="followUser('${s.userId}')" style="flex:1; min-width:100px; font-size:12px; padding:6px;">Follow</button>
           </div>
         </div>
       `;
     });
     html += `</div>`;
     section.innerHTML = html;
+    console.log("Similar people section rendered successfully");
   } catch (e) {
     console.error("Render similar people failed", e);
   }
