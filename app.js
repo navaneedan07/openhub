@@ -868,6 +868,10 @@ function loadUserProfile(user) {
           `;
           postsTarget.appendChild(el);
         });
+      })
+      .catch((err) => {
+        console.error("Error loading user posts", err);
+        postsTarget.innerHTML = '<div class="no-posts">Could not load your posts.</div>';
       });
   }
   if (clubsTarget) {
@@ -885,6 +889,10 @@ function loadUserProfile(user) {
           el.innerHTML = `<h4>${escapeHtml(d.clubName)}</h4><p>Joined</p>`;
           clubsTarget.appendChild(el);
         });
+      })
+      .catch((err) => {
+        console.error("Error loading user clubs", err);
+        clubsTarget.innerHTML = '<div class="no-posts">Could not load your clubs.</div>';
       });
   }
 }
