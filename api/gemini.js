@@ -1,29 +1,20 @@
-exports.handler = async (event) => {
+export default async function handler(req, res) {
   // Only allow POST
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-    };
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    const { text, mode } = JSON.parse(event.body || '{}');
+    const { text, mode } = req.body || {};
 
     if (!text) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing text parameter' }),
-      };
+      return res.status(400).json({ error: 'Missing text parameter' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('GEMINI_API_KEY not set in Netlify env');
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'API key not configured on server' }),
-      };
+      console.error('GEMINI_API_KEY not set in Vercel env');
+      return res.status(500).json({ error: 'API key not configured on server' });
     }
 
     // Build prompt based on mode
@@ -37,16 +28,10 @@ exports.handler = async (event) => {
     } else if (mode === 'moderate') {
       prompt = `Is this text appropriate for a college platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`;
     } else {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid mode' }),
-      };
+      return res.status(400).json({ error: 'Invalid mode' });
     }
 
-    // Call Google Gemini API using native fetch
-    // Use a stable, generally available model on the v1 endpoint.
-    // If Google changes availability, switch to a listed model from ListModels.
-    // Minimal retry for transient errors
+    // Call Google Gemini API
     const maxRetries = 2;
     let attempt = 0;
     let response;
@@ -57,6 +42,12 @@ exports.handler = async (event) => {
           parts: [{ text: prompt }],
         },
       ],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 500,
+      },
     };
 
     while (attempt <= maxRetries) {
@@ -79,18 +70,18 @@ exports.handler = async (event) => {
 
     if (!response.ok) {
       let errorMessage = `Gemini API error: ${response.status}`;
+      let errorDetails = '';
       try {
         const errJson = await response.json();
+        errorDetails = JSON.stringify(errJson, null, 2);
         if (errJson?.error?.message) errorMessage = errJson.error.message;
       } catch (e) {
         const errorData = await response.text();
+        errorDetails = errorData;
         errorMessage = `${errorMessage} ${errorData || ''}`.trim();
       }
-      console.error('Gemini API error:', response.status, errorMessage);
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: errorMessage }),
-      };
+      console.error('Gemini API error:', response.status, errorMessage, errorDetails);
+      return res.status(response.status).json({ error: errorMessage, details: errorDetails });
     }
 
     const data = await response.json();
@@ -104,15 +95,9 @@ exports.handler = async (event) => {
     if (mode === 'moderate') {
       respBody.approved = /yes/i.test(result);
     }
-    return {
-      statusCode: 200,
-      body: JSON.stringify(respBody),
-    };
+    return res.status(200).json(respBody);
   } catch (error) {
     console.error('Function error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
+    return res.status(500).json({ error: error.message });
   }
-};
+}

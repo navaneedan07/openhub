@@ -482,13 +482,10 @@ function setProfileAvatar(user) {
 // ==================== AI FEATURES ====================
 
 // Google Generative AI Setup
-const GEMINI_API_KEY = "AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4";
-const GEMINI_MODEL = "gemini-1.5-flash";
-// Optional: set a proxy URL (Cloudflare Worker) to avoid CORS
-// Example: window.GEMINI_PROXY_URL = "https://your-worker.example.workers.dev";
-const GEMINI_PROXY_URL = (typeof window !== 'undefined' && window.GEMINI_PROXY_URL) ? window.GEMINI_PROXY_URL : "";
+const GEMINI_PROXY_URL = "/api/gemini";
 
 function generateSmartFallback(prompt, mode) {
+  // Fallback when API fails
   switch (mode) {
     case "summary":
       const sentences = prompt.match(/[^.!?]+[.!?]+/g) || [prompt];
@@ -515,77 +512,24 @@ async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
     
-    let systemPrompt = "";
-    
-    switch (mode) {
-      case "summary":
-        systemPrompt = `Summarize this post in 2-3 sentences, making it more impactful and engaging:\n\n"${prompt}"`;
-        break;
-      case "suggestions":
-        systemPrompt = `As a college community expert, provide 3 actionable suggestions to improve this post for maximum engagement:\n\n"${prompt}"\n\nFormat as a numbered list.`;
-        break;
-      case "outline":
-        systemPrompt = `Create a better-structured outline for this post idea:\n\n"${prompt}"\n\nFormat as:\n- Main point\n  - Sub-point\n\nKeep it concise.`;
-        break;
-      case "search":
-        systemPrompt = `Search and provide relevant information about: "${prompt}"\n\nGive 3-4 key insights that would be helpful for a college community.`;
-        break;
-      default:
-        systemPrompt = prompt;
-    }
+    // Call Vercel API function
+    const proxyResp = await fetch(GEMINI_PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: prompt, mode })
+    });
 
-    // Prefer proxy if available (to bypass CORS)
-    if (GEMINI_PROXY_URL) {
-      try {
-        const proxyResp = await fetch(GEMINI_PROXY_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, mode })
-        });
-        if (proxyResp.ok) {
-          const proxyData = await proxyResp.json();
-          const text = proxyData.text || proxyData.result || "";
-          if (text) return text;
-        }
-        console.warn(`Proxy returned ${proxyResp.status}; falling back to direct API`);
-      } catch (e) {
-        console.warn("Proxy call failed; falling back to direct API", e);
+    if (proxyResp.ok) {
+      const proxyData = await proxyResp.json();
+      const text = proxyData.result || proxyData.text || "";
+      if (text) {
+        console.log("Gemini API result:", text);
+        return text;
       }
     }
 
-    // Direct Gemini REST API call (may be blocked by CORS on static hosts)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: systemPrompt }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 500,
-        }
-      })
-    });
-
-    if (!response.ok) {
-      console.warn(`API returned ${response.status}, using smart fallback...`);
-      return generateSmartFallback(prompt, mode);
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    console.log("Gemini API result:", text);
-    return text || generateSmartFallback(prompt, mode);
+    console.warn(`API returned ${proxyResp.status}, using smart fallback...`);
+    return generateSmartFallback(prompt, mode);
   } catch (error) {
     console.error("Gemini API error:", error);
     return generateSmartFallback(prompt, mode);
