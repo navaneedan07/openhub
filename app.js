@@ -2044,9 +2044,9 @@ function highlightMentions(text) {
 const GEMINI_PROXY_URL = "/api/gemini";
 // Prefer cheaper / available models first; backend should honor `model` if supported.
 const GEMINI_MODEL_PREFERENCE = [
-  "models/gemini-2.0-flash-001",
+  "models/gemini-2.5-flash",
   "models/gemini-2.5-flash-lite",
-  "models/gemini-2.5-flash"
+  "models/gemini-2.0-flash-001"
 ];
 
 function generateSmartFallback(prompt, mode) {
