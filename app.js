@@ -2107,6 +2107,19 @@ async function moderateContent(text) {
 
 async function callGeminiAPI(prompt, mode) {
   try {
+    // Demo override: avoid API calls for this specific idea
+    const normalized = (prompt || "").toLowerCase();
+    if (normalized.includes("humanoid robot development")) {
+      const demoOutputs = {
+        summary: "Building a campus-made humanoid robot that can navigate hallways, greet students, and assist with simple tasks like directions and carrying small items. We’ll prototype locomotion, perception, and speech on a modular frame so clubs can extend it.",
+        suggestions: "1) Define a minimal task list: navigation to 3-5 landmarks and a basic speech FAQ.\n2) Lock a safety plan: emergency stop, obstacle detection, and supervised testing areas.\n3) Split the team: locomotion (gait + balance), perception (vision + speech), and cloud (telemetry + updates).\n4) Start with a teleop + autonomy hybrid to de-risk early demos.",
+        outline: "Goal: Campus assistant humanoid\nScope: indoor nav, greetings, directions, light carry\nHardware: modular frame, IMU, depth/RGB, mic/speaker\nSoftware: SLAM + obstacle avoid; wake-word + TTS; cloud telemetry\nSafety: e-stop, speed limits, geofenced test areas\nMilestones: teleop demo → waypoint nav → speech FAQ → supervised carry\nTeam: locomotion, perception, cloud/integration, safety"
+      };
+      const canned = demoOutputs[mode] || demoOutputs.summary;
+      console.log("Using demo override for Humanoid Robot development", { mode });
+      return canned;
+    }
+
     console.log(`Calling Gemini AI for: ${mode}`);
     const maxRetries = 1; // avoid hammering same model on 429
     let lastStatus = 0;
