@@ -1219,10 +1219,10 @@ function saveProfileDetails() {
 
   setProfileStatus("Saving...");
 
-  // If a photo is selected, upload it first
+  // If a photo is selected, resize and encode it first
   if (photoInput && photoInput.files.length > 0) {
-    uploadProfilePhoto(user, photoInput.files[0], (photoURL) => {
-      saveProfileData(user, name, department, year, registrationNumber, photoURL);
+    resizeAndEncodeImage(photoInput.files[0], (base64Data) => {
+      saveProfileData(user, name, department, year, registrationNumber, base64Data);
     });
   } else {
     // No photo selected, just save existing data
@@ -1230,28 +1230,38 @@ function saveProfileDetails() {
   }
 }
 
-async function uploadProfilePhoto(user, file, callback) {
-  if (!storage) {
-    setProfileStatus("File uploads not enabled", "#d32f2f");
-    return;
-  }
-
-  if (file.size > ATTACHMENT_SIZE_LIMIT) {
-    setProfileStatus("Photo too large. Max 5 MB.", "#d32f2f");
-    return;
-  }
-
-  try {
-    const ext = file.name.split('.').pop();
-    const path = `profiles/${user.uid}/avatar.${ext}`;
-    const ref = storage.ref().child(path);
-    const snapshot = await ref.put(file);
-    const photoURL = await snapshot.ref.getDownloadURL();
-    callback(photoURL);
-  } catch (err) {
-    console.error("Photo upload error:", err);
-    setProfileStatus("Photo upload failed", "#d32f2f");
-  }
+async function resizeAndEncodeImage(file, callback) {
+  // Resize to 200x200 and convert to base64
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const size = 200;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw image centered and cropped
+      const scale = Math.max(size / img.width, size / img.height);
+      const x = (size - img.width * scale) / 2;
+      const y = (size - img.height * scale) / 2;
+      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      
+      // Convert to base64 (JPEG with 0.8 quality to keep size down)
+      const base64 = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Check size (Firestore limit is 1MB per document)
+      if (base64.length > 500000) {
+        setProfileStatus("Photo too large after compression", "#d32f2f");
+        return;
+      }
+      
+      callback(base64);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function saveProfileData(user, name, department, year, registrationNumber, photoURL) {
