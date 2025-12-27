@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenHub - Forum Thread</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAGRkVamjyg5kzN9e7rpeIFx9ZfP1OxxZ4",
+      authDomain: "openhub-d6fe7.firebaseapp.com",
+      projectId: "openhub-d6fe7",
+      storageBucket: "openhub-d6fe7.firebasestorage.app",
+      messagingSenderId: "542864747246",
+      appId: "1:542864747246:web:dd21353654f6bdffb4a1ff",
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body class="fullbleed" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+  <div class="layout-wrapper">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">💬 Forum</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="home.html" class="nav-item">
+          <span class="nav-icon">🏠</span><span class="nav-text">Home</span>
+        </a>
+        <a href="dashboard.html" class="nav-item">
+          <span class="nav-icon">📊</span><span class="nav-text">Dashboard</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="logout-btn-sidebar" onclick="logout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="header-top">
+        <h2 class="brand-title">Post Forum</h2>
+        <div class="header-actions">
+          <a class="profile-avatar" href="profile.html" title="My Profile">
+            <img id="avatarImgThread" alt="Profile" />
+            <span id="avatarInitialThread" style="display:none;">U</span>
+          </a>
+        </div>
+      </div>
+
+      <section id="threadPost" class="post"></section>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

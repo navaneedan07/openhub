@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script>
       const firebaseConfig = {
         apiKey: "AIzaSyAGRkVamjyg5kzN9e7rpeIFx9ZfP1OxxZ4",
@@ -78,6 +79,14 @@
 
         <div class="post-input-section">
             <textarea id="postText" placeholder="Share your idea, question, or announcement with the community..."></textarea>
+            <div class="attachment-row">
+                <input type="url" id="attachmentLink" placeholder="Optional: attach a link (docs, decks, repos...)" aria-label="Attachment link" />
+                <label class="file-upload">
+                    <input type="file" id="attachmentFile" aria-label="Upload file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.txt,.zip" />
+                    <span>📎 Upload a file (max 5 MB)</span>
+                </label>
+                <div class="attachment-hint">Attachments are shared with the community. Avoid sensitive data.</div>
+            </div>
             
             <!-- AI Features Section -->
             <div class="ai-features" style="margin-top: 10px;" id="aiSection">

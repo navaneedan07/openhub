@@ -26,7 +26,57 @@ import * as logger from "firebase-functions/logger";
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+function generateFallback(text: string, mode: string): string {
+	switch (mode) {
+		case "summary": {
+			const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+			const keyPoints = sentences.slice(0, Math.max(1, Math.ceil(sentences.length / 3)));
+			return keyPoints.join(" ").trim();
+		}
+		case "suggestions":
+			return [
+				"1. Add concrete examples to make your idea actionable.",
+				"2. Invite collaboration by asking a clear question.",
+				"3. Improve clarity with short sections and headings."
+			].join("\n\n");
+		case "outline":
+			return [
+				"- Introduction: Context and goal",
+				"- Details: Key points and resources",
+				"- Next Steps: Call to action"
+			].join("\n");
+		case "moderate": {
+			const bad = /(spam|hate|abuse|slur|nsfw|explicit)/i;
+			return bad.test(text) ? "NO" : "YES";
+		}
+		case "tags": {
+			const words = (text || "").toLowerCase().match(/[a-z]{3,}/g) || [];
+			const freq: Record<string, number> = {};
+			for (const w of words) freq[w] = (freq[w] || 0) + 1;
+			const tags = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 5);
+			return tags.join(", ");
+		}
+		default:
+			return text;
+	}
+}
+
+export const api = onRequest(async (req, res) => {
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+	res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+	if (req.method === "OPTIONS") return res.status(204).end();
+
+	if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+
+	try {
+		const { text = "", mode = "summary" } = req.body || {};
+		// If you later set a real Gemini API key, you can replace this fallback
+		// call with an actual API request and return its response.
+		const result = generateFallback(String(text), String(mode));
+		return res.status(200).json({ result });
+	} catch (err) {
+		logger.error("API error", err as any);
+		return res.status(500).json({ error: "Internal Server Error" });
+	}
+});

@@ -1,5 +1,12 @@
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage ? firebase.storage() : null;
+const commentUnsubscribers = {};
+const commentPaging = {};
+const ATTACHMENT_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
+const COMMENTS_PAGE_SIZE = 15;
+let currentThreadPostId = null;
+let replyContext = { parentId: null, parentAuthor: null };
 
 // Google AI Setup
 let genAI = null;
@@ -114,6 +121,18 @@ if (window.location.pathname.includes('profile.html')) {
   });
 }
 
+// Thread (per-post forum) page
+if (window.location.pathname.includes('thread.html')) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      setAvatarSafe(user, 'avatarImgThread', 'avatarInitialThread');
+      loadThread();
+    }
+  });
+}
+
 function login() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider)
@@ -151,8 +170,57 @@ function displayUserInfo(user) {
   }
 }
 
+function clearAttachmentInputs() {
+  const linkInput = document.getElementById("attachmentLink");
+  const fileInput = document.getElementById("attachmentFile");
+  if (linkInput) linkInput.value = "";
+  if (fileInput) fileInput.value = "";
+}
+
+async function uploadAttachment(file) {
+  if (!storage) {
+    throw new Error("File uploads are not enabled in this build.");
+  }
+
+  if (file.size > ATTACHMENT_SIZE_LIMIT) {
+    throw new Error("File too large. Max 5 MB.");
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("You must be logged in to upload files.");
+  }
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `attachments/${user.uid}/${Date.now()}_${safeName}`;
+  const ref = storage.ref().child(path);
+
+  const snapshot = await ref.put(file);
+  const url = await snapshot.ref.getDownloadURL();
+
+  return {
+    url,
+    name: file.name,
+    size: file.size,
+    type: file.type || "file",
+    storagePath: path,
+    attachmentType: "file"
+  };
+}
+
+function buildLinkAttachment(link) {
+  return {
+    url: link,
+    name: link,
+    type: "link",
+    attachmentType: "link"
+  };
+}
+
 function addPost() {
   const text = document.getElementById("postText").value.trim();
+  const attachmentLink = (document.getElementById("attachmentLink")?.value || "").trim();
+  const attachmentFile = document.getElementById("attachmentFile")?.files?.[0];
   
   if (!text) {
     alert("Please write something before posting!");
@@ -172,39 +240,69 @@ function addPost() {
       return;
     }
 
-    // Auto-tag the post using AI
-    aiDiscovery.autoTagContent(text, "post").then((tags) => {
-      // Track user interests
-      tags.forEach(tag => {
-        aiDiscovery.trackUserInterest(user.uid, tag, 1);
-      });
+    let attachment = null;
 
-      db.collection("posts").add({
+    const processPost = async () => {
+      if (attachmentFile) {
+        attachment = await uploadAttachment(attachmentFile);
+      } else if (attachmentLink) {
+        attachment = buildLinkAttachment(attachmentLink);
+      }
+
+      // Auto-tag the post using AI
+      const tags = await aiDiscovery.autoTagContent(text, "post");
+      tags.forEach(tag => aiDiscovery.trackUserInterest(user.uid, tag, 1));
+
+      await db.collection("posts").add({
         text: text,
         authorName: user.displayName || "Anonymous",
         authorEmail: user.email,
         authorId: user.uid,
-        tags: tags, // AI-generated tags
+        tags: tags,
+        attachment: attachment,
+        commentCount: 0,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         createdAt: new Date()
-      })
-      .then(() => {
-        // Clear the input field and AI output
-        document.getElementById("postText").value = "";
-        const aiOutput = document.getElementById("aiOutput");
-        if (aiOutput) {
-          aiOutput.style.display = "none";
-        }
-      })
-      .catch((error) => {
-        alert("Error posting: " + error.message);
-        console.error(error);
       });
+
+      document.getElementById("postText").value = "";
+      clearAttachmentInputs();
+      const aiOutput = document.getElementById("aiOutput");
+      if (aiOutput) {
+        aiOutput.style.display = "none";
+      }
+    };
+
+    processPost().catch((error) => {
+      alert("Error posting: " + error.message);
+      console.error(error);
     });
   });
 }
 
+function renderAttachment(attachment) {
+  if (!attachment || !attachment.url) return "";
+  const label = attachment.name || (attachment.attachmentType === "link" ? "Attachment link" : "Attachment");
+  const sizeLabel = attachment.size ? ` · ${Math.round(attachment.size / 1024)} KB` : "";
+  return `
+    <div class="attachment-chip">
+      <span class="attachment-icon">📎</span>
+      <a href="${attachment.url}" target="_blank" rel="noopener">${escapeHtml(label)}</a>
+      <span class="attachment-meta">${attachment.attachmentType === "link" ? "Link" : "File"}${sizeLabel}</span>
+    </div>
+  `;
+}
+
 function loadPosts() {
+  for (const id in commentUnsubscribers) {
+    try {
+      commentUnsubscribers[id]();
+    } catch (e) {
+      console.warn("Error cleaning comment listener", e);
+    }
+    delete commentUnsubscribers[id];
+  }
+
   db.collection("posts")
     .orderBy("timestamp", "desc")
     .onSnapshot((snapshot) => {
@@ -221,6 +319,10 @@ function loadPosts() {
         const timestamp = data.timestamp ? data.timestamp.toDate() : new Date(data.createdAt);
         const timeString = formatTime(timestamp);
         const tags = data.tags || [];
+        const commentCount = data.commentCount || 0;
+        const attachmentHTML = renderAttachment(data.attachment);
+        const commentsContainerId = `comments-${doc.id}`;
+        const commentInputId = `comment-input-${doc.id}`;
         
         const postElement = document.createElement("div");
         postElement.className = "post";
@@ -233,17 +335,275 @@ function loadPosts() {
         postElement.innerHTML = `
           <div class="post-text">${escapeHtml(data.text)}</div>
           ${tagsHTML}
+          ${attachmentHTML}
           <div class="post-meta">
             <span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>
             <span>⏰ ${timeString}</span>
           </div>
+          <div class="post-actions">
+            <button class="ghost-btn" onclick="window.location.href='thread.html?id=${doc.id}'">💬 Open forum</button>
+            <span class="comment-count">💬 ${commentCount} repl${commentCount === 1 ? 'y' : 'ies'}</span>
+          </div>
+          <div class="comments-block">
+            <div id="${commentsContainerId}" class="comments-list"></div>
+            <div class="comment-form">
+              <input id="${commentInputId}" type="text" placeholder="Reply to this idea..." aria-label="Add a reply" />
+              <button onclick="addComment('${doc.id}', '${commentInputId}')">Reply</button>
+            </div>
+          </div>
         `;
         postsDiv.appendChild(postElement);
+
+        subscribeToComments(doc.id, commentsContainerId);
       });
     }, (error) => {
       console.error("Error loading posts: ", error);
       document.getElementById("posts").innerHTML = '<div class="no-posts">Error loading posts. Please refresh.</div>';
     });
+}
+
+function subscribeToComments(postId, containerId, allowReply = false) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (commentUnsubscribers[postId]) {
+    commentUnsubscribers[postId]();
+  }
+
+  commentUnsubscribers[postId] = db.collection("posts")
+    .doc(postId)
+    .collection("comments")
+    .orderBy("timestamp", "asc")
+    .limit(20)
+    .onSnapshot((snap) => renderComments(snap, container, allowReply, postId));
+}
+
+function renderComments(snapshot, container, allowReply = false, postId = null, append = false) {
+  const fragments = [];
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
+    const replyLabel = data.parentCommentId ? '<div class="comment-reply-label">↳ Replying to a comment</div>' : '';
+    const safeAuthor = escapeForAttr(data.authorName || "Member");
+    const replyBtn = allowReply && postId ? `<button class="ghost-btn" onclick="startReply('${doc.id}', '${safeAuthor}')">Reply</button>` : '';
+    fragments.push(`
+      <div class="comment${data.parentCommentId ? ' comment-nested' : ''}">
+        ${replyLabel}
+        <div class="comment-text">${highlightMentions(data.text || "")}</div>
+        <div class="comment-meta">
+          <span class="comment-author">${escapeHtml(data.authorName || "Member")}</span>
+          <span>${formatTime(timestamp)}</span>
+        </div>
+        ${replyBtn ? `<div class="comment-actions">${replyBtn}</div>` : ''}
+      </div>
+    `);
+  });
+
+  if (append && container.innerHTML) {
+    container.innerHTML = container.innerHTML + fragments.join("");
+  } else {
+    container.innerHTML = fragments.join("") || '<div class="no-comments">No replies yet. Start the conversation!</div>';
+  }
+}
+
+function focusCommentInput(inputId) {
+  const el = document.getElementById(inputId);
+  if (el) el.focus();
+}
+
+async function addComment(postId, inputId, parentCommentId = null) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to reply.");
+    return;
+  }
+
+  const isClean = await moderateContent(text);
+  if (!isClean) {
+    alert("Your reply contains inappropriate content. Please revise.");
+    return;
+  }
+
+  const mentions = extractMentions(text);
+  const postRef = db.collection("posts").doc(postId);
+  const commentsRef = postRef.collection("comments");
+  const commentRef = commentsRef.doc();
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const postSnap = await tx.get(postRef);
+      const currentCount = (postSnap.exists && postSnap.data().commentCount) ? postSnap.data().commentCount : 0;
+
+      tx.set(commentRef, {
+        text,
+        mentions,
+        parentCommentId: parentCommentId || null,
+        authorName: user.displayName || "Anonymous",
+        authorEmail: user.email,
+        authorId: user.uid,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: new Date()
+      });
+
+      tx.update(postRef, { commentCount: currentCount + 1 });
+    });
+
+    input.value = "";
+    clearReplyTarget();
+  } catch (error) {
+    console.error("Error adding comment", error);
+    alert("Could not add reply. Please try again.");
+  }
+}
+
+function clearReplyTarget() {
+  replyContext = { parentId: null, parentAuthor: null };
+  const pill = document.getElementById("replyTarget");
+  const label = document.getElementById("replyTargetName");
+  if (pill) pill.style.display = "none";
+  if (label) label.textContent = "";
+}
+
+function startReply(parentId, authorName) {
+  replyContext = { parentId, parentAuthor: authorName || "member" };
+  const pill = document.getElementById("replyTarget");
+  const label = document.getElementById("replyTargetName");
+  if (label) label.textContent = authorName ? `Replying to ${authorName}` : "Replying to a comment";
+  if (pill) pill.style.display = "inline-flex";
+  const input = document.getElementById("threadCommentInput");
+  if (input) {
+    input.focus();
+    input.placeholder = `@${(authorName || "member").replace(/\s+/g, '')} ...`;
+  }
+}
+
+async function loadCommentsPage(postId, append = false, allowReply = false) {
+  const container = document.getElementById(`comments-${postId}`) || document.getElementById("threadComments");
+  const loadMoreBtn = document.getElementById(`loadMore-${postId}`);
+  if (!container) return;
+
+  commentPaging[postId] = commentPaging[postId] || { last: null, done: false };
+  const state = commentPaging[postId];
+  if (state.done) return;
+
+  if (loadMoreBtn) {
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.textContent = "Loading replies...";
+  }
+
+  try {
+    let query = db.collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .orderBy("timestamp", "asc")
+      .limit(COMMENTS_PAGE_SIZE);
+
+    if (state.last) {
+      query = query.startAfter(state.last);
+    }
+
+    const snap = await query.get();
+
+    if (snap.empty && !append) {
+      container.innerHTML = '<div class="no-comments">No replies yet. Start the conversation!</div>';
+      state.done = true;
+    } else {
+      renderComments(snap, container, allowReply, postId, append);
+      if (snap.docs.length > 0) {
+        state.last = snap.docs[snap.docs.length - 1];
+      }
+      if (snap.size < COMMENTS_PAGE_SIZE) {
+        state.done = true;
+      }
+    }
+  } catch (error) {
+    console.error("Error loading comments page", error);
+  } finally {
+    if (loadMoreBtn) {
+      loadMoreBtn.disabled = commentPaging[postId].done;
+      loadMoreBtn.textContent = commentPaging[postId].done ? "No more replies" : "Load more replies";
+    }
+  }
+}
+
+function loadMoreComments(postId) {
+  loadCommentsPage(postId, true, true);
+}
+
+async function loadThread() {
+  const postId = getQueryParam("id");
+  const postContainer = document.getElementById("threadPost");
+  const commentsContainerId = "threadComments";
+  const commentInputId = "threadCommentInput";
+
+  if (!postId) {
+    if (postContainer) {
+      postContainer.innerHTML = '<div class="no-posts">Missing post id.</div>';
+    }
+    return;
+  }
+
+  try {
+    const doc = await db.collection("posts").doc(postId).get();
+    if (!doc.exists) {
+      postContainer.innerHTML = '<div class="no-posts">Post not found.</div>';
+      return;
+    }
+
+    const data = doc.data();
+    // Ensure commentCount exists for legacy posts
+    if (data.commentCount === undefined) {
+      await db.collection("posts").doc(postId).set({ commentCount: 0 }, { merge: true });
+      data.commentCount = 0;
+    }
+    const timestamp = data.timestamp ? data.timestamp.toDate() : new Date(data.createdAt);
+    const tags = data.tags || [];
+    const attachmentHTML = renderAttachment(data.attachment);
+
+    const tagsHTML = tags.length
+      ? `<div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px;">${tags.map(tag => `<span style="display: inline-block; background: #e4e7fb; color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">#${tag}</span>`).join('')}</div>`
+      : "";
+
+    currentThreadPostId = doc.id;
+    commentPaging[doc.id] = { last: null, done: false };
+
+    postContainer.innerHTML = `
+      <div class="post">
+        <div class="post-text">${escapeHtml(data.text)}</div>
+        ${tagsHTML}
+        ${attachmentHTML}
+        <div class="post-meta">
+          <span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>
+          <span>⏰ ${formatTime(timestamp)}</span>
+        </div>
+      </div>
+      <div class="comments-block">
+        <div id="${commentsContainerId}" class="comments-list"></div>
+        <div id="replyTarget" class="reply-target" style="display:none;">
+          <span id="replyTargetName"></span>
+          <button class="ghost-btn" onclick="clearReplyTarget()">Cancel</button>
+        </div>
+        <div class="comment-form">
+          <input id="${commentInputId}" type="text" placeholder="Share your reply or suggestion..." aria-label="Add a reply" />
+          <button onclick="addComment('${doc.id}', '${commentInputId}', replyContext.parentId)">Reply</button>
+        </div>
+        <button id="loadMore-${doc.id}" class="ghost-btn load-more-btn" onclick="loadMoreComments('${doc.id}')">Load more replies</button>
+      </div>
+    `;
+
+    await loadCommentsPage(doc.id, false, true);
+  } catch (error) {
+    console.error("Error loading thread", error);
+    if (postContainer) {
+      postContainer.innerHTML = '<div class="no-posts">Could not load this forum thread.</div>';
+    }
+  }
 }
 
 // ----- Additional loaders -----
@@ -448,6 +808,10 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
+function escapeForAttr(text) {
+  return String(text || '').replace(/['"\\]/g, '_');
+}
+
 function setProfileAvatar(user) {
   const imgId = user._avatarImgId || 'avatarImg';
   const initialId = user._avatarInitialId || 'avatarInitial';
@@ -494,6 +858,20 @@ function setProfileAvatar(user) {
     img.style.display = 'none';
     initial.style.display = 'block';
   }
+}
+
+function getQueryParam(key) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(key);
+}
+
+function extractMentions(text) {
+  const matches = text.match(/@([A-Za-z0-9._-]{2,30})/g) || [];
+  return Array.from(new Set(matches.map(m => m.replace('@', ''))));
+}
+
+function highlightMentions(text) {
+  return escapeHtml(text).replace(/@([A-Za-z0-9._-]{2,30})/g, '<span class="mention">@$1</span>');
 }
 
 // ==================== AI FEATURES ====================

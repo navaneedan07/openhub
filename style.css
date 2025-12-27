@@ -362,6 +362,180 @@ button:active {
   justify-content: space-between;
 }
 
+.post-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.attachment-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.attachment-row input[type="url"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95em;
+}
+
+.file-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8f9ff;
+  border: 1px dashed #667eea;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #4a5bdc;
+}
+
+.file-upload input[type="file"] {
+  display: none;
+}
+
+.attachment-hint {
+  font-size: 0.85em;
+  color: #777;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef1ff;
+  border: 1px solid #dfe3fb;
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin: 10px 0 4px 0;
+  font-size: 0.9em;
+  color: #4a5bdc;
+}
+
+.attachment-chip a {
+  color: #4a5bdc;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.attachment-chip a:hover {
+  text-decoration: underline;
+}
+
+.attachment-meta {
+  font-size: 0.8em;
+  color: #777;
+}
+
+.comments-block {
+  margin-top: 12px;
+  border-top: 1px solid #eaeaea;
+  padding-top: 10px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment {
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.comment-nested {
+  margin-left: 12px;
+  border-left: 3px solid #eef1ff;
+}
+
+.comment-text {
+  font-size: 0.95em;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.mention {
+  background: #f0f4ff;
+  color: #4a5bdc;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.comment-meta {
+  font-size: 0.8em;
+  color: #777;
+  display: flex;
+  justify-content: space-between;
+}
+
+.comment-actions {
+  margin-top: 6px;
+}
+
+.comment-author {
+  font-weight: 700;
+  color: #4a5bdc;
+}
+
+.comment-reply-label {
+  font-size: 0.75em;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.comment-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.comment-form input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.no-comments {
+  color: #777;
+  font-size: 0.9em;
+}
+
+.load-more-btn {
+  margin-top: 10px;
+  width: 100%;
+  text-align: center;
+}
+
+.comment-count {
+  align-self: center;
+  color: #4a5bdc;
+  font-weight: 700;
+  font-size: 0.9em;
+}
+
+.reply-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eef1ff;
+  color: #4a5bdc;
+  padding: 8px 10px;
+  border-radius: 999px;
+  margin: 8px 0;
+  border: 1px solid #dfe3fb;
+}
+
 .post-author {
   font-weight: 600;
   color: #667eea;
