@@ -2044,8 +2044,8 @@ function highlightMentions(text) {
 const GEMINI_PROXY_URL = "/api/gemini";
 // Prefer cheaper / available models first; backend should honor `model` if supported.
 const GEMINI_MODEL_PREFERENCE = [
+  "models/gemini-2.5-flash-lite", // higher RPM allowance
   "models/gemini-2.5-flash",
-  "models/gemini-2.5-flash-lite",
   "models/gemini-2.0-flash-001"
 ];
 
@@ -2108,7 +2108,7 @@ async function moderateContent(text) {
 async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
-    const maxRetries = 2;
+    const maxRetries = 1; // avoid hammering same model on 429
     let lastStatus = 0;
 
     for (const model of GEMINI_MODEL_PREFERENCE) {
@@ -2131,12 +2131,12 @@ async function callGeminiAPI(prompt, mode) {
           }
         }
 
-        // If rate limited or temporarily unavailable, back off and retry on same model
+        // If rate limited or temporarily unavailable, do a short backoff then try next model
         if (lastStatus === 429 || lastStatus === 503) {
-          const delayMs = 600 * Math.pow(2, attempt); // 600ms, 1200ms, ...
+          const jitter = 200 + Math.random() * 300; // 200-500ms jitter
+          const delayMs = (500 + jitter) * Math.pow(2, attempt);
           await new Promise(res => setTimeout(res, delayMs));
-          attempt++;
-          continue;
+          break; // move to next model to spread load
         }
 
         // Other errors: break to try next model

@@ -39,8 +39,8 @@ export default async function handler(req, res) {
     const normalizeModel = (m) => String(m || '').replace(/^models\//, '');
     const MODEL_FALLBACKS = [
       normalizeModel(model),
-      'gemini-2.5-flash',
       'gemini-2.5-flash-lite',
+      'gemini-2.5-flash',
       'gemini-2.0-flash-001'
     ].filter(Boolean);
 
