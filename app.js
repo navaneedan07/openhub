@@ -1278,8 +1278,9 @@ async function findSimilarUsersFor(userId) {
   try {
     const recentPosts = await db.collection("posts")
       .orderBy("timestamp", "desc")
-      .limit(120)
+      .limit(200)
       .get();
+    console.log("Found", recentPosts.size, "recent posts");
     recentPosts.forEach(d => {
       const uid = d.data().authorId;
       if (uid && uid !== userId) candidates.add(uid);
@@ -1290,8 +1291,9 @@ async function findSimilarUsersFor(userId) {
 
   try {
     const members = await db.collection("club_members")
-      .limit(200)
+      .limit(300)
       .get();
+    console.log("Found", members.size, "club members");
     members.forEach(d => {
       const uid = d.data().userId;
       if (uid && uid !== userId) candidates.add(uid);
@@ -1300,7 +1302,16 @@ async function findSimilarUsersFor(userId) {
     console.error("Candidate build (clubs) failed", e);
   }
 
+  console.log("Total candidates:", candidates.size);
+
+  if (candidates.size === 0) {
+    console.warn("No candidates found, returning empty");
+    return [];
+  }
+
   const mine = await getUserInterests(userId);
+  console.log("Current user interests: tags=", mine.tags.size, "clubs=", mine.clubs.size);
+  
   const weights = { tags: 0.6, clubs: 0.4 };
 
   const scored = [];
@@ -1318,6 +1329,7 @@ async function findSimilarUsersFor(userId) {
 
   // Sort by score descending, but keep weak matches if strong ones are missing
   scored.sort((a, b) => b.score - a.score);
+  console.log("Scored", scored.length, "candidates, top 5:", scored.slice(0, 5));
 
   // Enrich with display names (best effort)
   const top = scored.slice(0, 5);
