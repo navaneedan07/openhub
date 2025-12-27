@@ -1204,6 +1204,7 @@ function saveProfileDetails() {
   const deptInput = document.getElementById("profileDept");
   const yearInput = document.getElementById("profileYear");
   const regInput = document.getElementById("profileReg");
+  const photoInput = document.getElementById("profilePhoto");
   if (!nameInput || !deptInput || !yearInput || !regInput) return;
 
   const name = nameInput.value.trim();
@@ -1217,17 +1218,55 @@ function saveProfileDetails() {
   }
 
   setProfileStatus("Saving...");
+
+  // If a photo is selected, upload it first
+  if (photoInput && photoInput.files.length > 0) {
+    uploadProfilePhoto(user, photoInput.files[0], (photoURL) => {
+      saveProfileData(user, name, department, year, registrationNumber, photoURL);
+    });
+  } else {
+    // No photo selected, just save existing data
+    saveProfileData(user, name, department, year, registrationNumber, user.photoURL || "");
+  }
+}
+
+async function uploadProfilePhoto(user, file, callback) {
+  if (!storage) {
+    setProfileStatus("File uploads not enabled", "#d32f2f");
+    return;
+  }
+
+  if (file.size > ATTACHMENT_SIZE_LIMIT) {
+    setProfileStatus("Photo too large. Max 5 MB.", "#d32f2f");
+    return;
+  }
+
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `profiles/${user.uid}/avatar.${ext}`;
+    const ref = storage.ref().child(path);
+    const snapshot = await ref.put(file);
+    const photoURL = await snapshot.ref.getDownloadURL();
+    callback(photoURL);
+  } catch (err) {
+    console.error("Photo upload error:", err);
+    setProfileStatus("Photo upload failed", "#d32f2f");
+  }
+}
+
+function saveProfileData(user, name, department, year, registrationNumber, photoURL) {
   db.collection("profiles").doc(user.uid).set({
     name,
     department,
     year,
     registrationNumber,
-    photoURL: user.photoURL || "",
+    photoURL: photoURL || "",
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   }, { merge: true })
     .then(() => {
       setProfileStatus("Saved!", "#2e7d32");
       updateProfileDisplay(name, department, year, registrationNumber);
+      document.getElementById("profilePhoto").value = "";
       setTimeout(() => hideProfileEditForm(), 800);
     })
     .catch((err) => {
