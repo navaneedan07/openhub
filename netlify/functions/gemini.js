@@ -1,20 +1,29 @@
-export default async function handler(req, res) {
+exports.handler = async (event) => {
   // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
   }
 
   try {
-    const { text, mode, model } = req.body || {};
+    const { text, mode, model } = JSON.parse(event.body || '{}');
 
     if (!text) {
-      return res.status(400).json({ error: 'Missing text parameter' });
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Missing text parameter' }),
+      };
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('GEMINI_API_KEY not set in Vercel env');
-      return res.status(500).json({ error: 'API key not configured on server' });
+      console.error('GEMINI_API_KEY not set in Netlify env');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'API key not configured on server' }),
+      };
     }
 
     // Build prompt based on mode
@@ -27,12 +36,11 @@ export default async function handler(req, res) {
       prompt = `Create a concise outline with 5-7 bullets for the following idea. Use short phrases, no long paragraphs.\n\n"${text}"`;
     } else if (mode === 'moderate') {
       prompt = `Is this text appropriate for a college platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`;
-    } else if (mode === 'tags') {
-      prompt = `Extract 3-5 main topics/tags from this content. Return ONLY comma-separated topics:\n\n"${text}"`;
-    } else if (mode === 'search') {
-      prompt = `Find and suggest 3-4 related search topics for: "${text}". Return as comma-separated list only.`;
     } else {
-      return res.status(400).json({ error: 'Invalid mode' });
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid mode' }),
+      };
     }
 
     // Normalize model name coming from client (may include 'models/' prefix)
@@ -44,19 +52,12 @@ export default async function handler(req, res) {
       'gemini-2.5-flash'
     ].filter(Boolean);
 
-    // Base payload; we may adjust tokens per mode
     const payloadBase = {
       contents: [
         {
           parts: [{ text: prompt }],
         },
       ],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: mode === 'summary' ? 200 : mode === 'suggestions' ? 180 : mode === 'outline' ? 240 : 100,
-      },
     };
     const maxRetries = 2;
     let lastStatus = 0;
@@ -86,18 +87,18 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       let errorMessage = `Gemini API error: ${response.status}`;
-      let errorDetails = '';
       try {
         const errJson = await response.json();
-        errorDetails = JSON.stringify(errJson, null, 2);
         if (errJson?.error?.message) errorMessage = errJson.error.message;
       } catch (e) {
         const errorData = await response.text();
-        errorDetails = errorData;
         errorMessage = `${errorMessage} ${errorData || ''}`.trim();
       }
-      console.error('Gemini API error:', response.status, errorMessage, errorDetails);
-      return res.status(response.status).json({ error: errorMessage, details: errorDetails });
+      console.error('Gemini API error:', response.status, errorMessage);
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: errorMessage }),
+      };
     }
 
     const data = await response.json();
@@ -111,9 +112,15 @@ export default async function handler(req, res) {
     if (mode === 'moderate') {
       respBody.approved = /yes/i.test(result);
     }
-    return res.status(200).json(respBody);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(respBody),
+    };
   } catch (error) {
     console.error('Function error:', error);
-    return res.status(500).json({ error: error.message });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+    };
   }
-}
+};
