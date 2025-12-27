@@ -345,6 +345,7 @@ function loadPosts() {
         const timeString = formatTime(timestamp);
         const tags = data.tags || [];
         const commentCount = data.commentCount || 0;
+        const authorId = data.authorId;
         const attachmentHTML = renderAttachment(data.attachment);
         const commentsContainerId = `comments-${doc.id}`;
         const commentInputId = `comment-input-${doc.id}`;
