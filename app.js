@@ -1430,20 +1430,6 @@ async function loadOtherUserProfile(userId) {
       _avatarImgId: 'avatarImgProf',
       _avatarInitialId: 'avatarInitialProf'
     });
-        name = postsSnap.docs[0].data().authorName || "User";
-      }
-      
-      // Create a basic profile document
-      await db.collection("profiles").doc(userId).set({
-        name: name,
-        department: "",
-        year: "",
-        registrationNumber: "",
-        followerCount: 0,
-        followingCount: 0,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    }
 
     // Update display
     updateProfileDisplay(name, dept, year, reg);
