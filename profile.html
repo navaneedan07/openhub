@@ -71,12 +71,24 @@
         </div>
       </div>
 
+    <!-- Profile Display Card -->
     <section style="margin-top:16px;">
-      <h3 style="color:#667eea; margin-bottom:10px;">📄 My Posts</h3>
-      <div id="userPosts"></div>
-    </section>
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="color:#667eea; margin-bottom:10px;">📝 Profile Details</h3>
+      <div id="profileDisplayCard" class="card" style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="color:#667eea; margin:0;">📝 Profile Details</h3>
+          <button class="ghost-btn" id="profileEditBtn">✏️ Edit</button>
+        </div>
+        <div style="display:grid; gap:8px; color:#333;">
+          <div><strong>Name:</strong> <span id="displayName">—</span></div>
+          <div><strong>Department:</strong> <span id="displayDept">—</span></div>
+          <div><strong>Year:</strong> <span id="displayYear">—</span></div>
+          <div><strong>Registration No.:</strong> <span id="displayReg">—</span></div>
+        </div>
+      </div>
+
+      <!-- Profile Edit Form (hidden by default) -->
+      <div id="profileEditCard" class="card" style="margin-bottom:16px; display:none;">
+        <h3 style="color:#667eea; margin-bottom:10px;">📝 Edit Profile</h3>
         <div style="display:grid; gap:10px; max-width:520px;">
           <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
             Name
@@ -96,10 +108,15 @@
           </label>
           <div style="display:flex; gap:10px; align-items:center;">
             <button class="ghost-btn" id="profileSaveBtn">💾 Save</button>
+            <button class="ghost-btn" id="profileCancelBtn">Cancel</button>
             <div id="profileSaveStatus" style="color:#4a5bdc; font-weight:600;"></div>
           </div>
         </div>
       </div>
+
+      <h3 style="color:#667eea; margin-bottom:10px;">📄 My Posts</h3>
+      <div id="userPosts"></div>
+    </section>
 
     <section style="margin-top:24px;">
       <h3 style="color:#667eea; margin-bottom:10px;">🪪 My Clubs</h3>

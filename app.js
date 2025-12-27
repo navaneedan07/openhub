@@ -849,7 +849,22 @@ function renderResources(list) {
 
 function bindProfileForm(user) {
   const saveBtn = document.getElementById("profileSaveBtn");
+  const editBtn = document.getElementById("profileEditBtn");
+  const cancelBtn = document.getElementById("profileCancelBtn");
   if (saveBtn) saveBtn.onclick = () => saveProfileDetails();
+  if (editBtn) editBtn.onclick = () => showProfileEditForm();
+  if (cancelBtn) cancelBtn.onclick = () => hideProfileEditForm();
+}
+
+function showProfileEditForm() {
+  document.getElementById("profileDisplayCard").style.display = "none";
+  document.getElementById("profileEditCard").style.display = "block";
+}
+
+function hideProfileEditForm() {
+  document.getElementById("profileDisplayCard").style.display = "block";
+  document.getElementById("profileEditCard").style.display = "none";
+  setProfileStatus("");
 }
 
 function setProfileStatus(text, color = "#4a5bdc") {
@@ -867,20 +882,38 @@ function loadProfileDetails(user) {
   const regInput = document.getElementById("profileReg");
   if (!nameInput || !deptInput || !yearInput || !regInput || !user) return;
 
-  setProfileStatus("Loading profile...");
   db.collection("profiles").doc(user.uid).get()
     .then((doc) => {
       const data = doc.exists ? doc.data() : {};
-      nameInput.value = data.name || user.displayName || "";
-      deptInput.value = data.department || "";
-      yearInput.value = data.year || "";
-      regInput.value = data.registrationNumber || "";
-      setProfileStatus("", "#4a5bdc");
+      const name = data.name || user.displayName || "";
+      const dept = data.department || "";
+      const year = data.year || "";
+      const reg = data.registrationNumber || "";
+      
+      // Update form inputs
+      nameInput.value = name;
+      deptInput.value = dept;
+      yearInput.value = year;
+      regInput.value = reg;
+      
+      // Update display spans
+      updateProfileDisplay(name, dept, year, reg);
     })
     .catch((err) => {
       console.error("Error loading profile details", err);
-      setProfileStatus("Could not load profile", "#d32f2f");
     });
+}
+
+function updateProfileDisplay(name, dept, year, reg) {
+  const displayName = document.getElementById("displayName");
+  const displayDept = document.getElementById("displayDept");
+  const displayYear = document.getElementById("displayYear");
+  const displayReg = document.getElementById("displayReg");
+  
+  if (displayName) displayName.textContent = name || "Not set";
+  if (displayDept) displayDept.textContent = dept || "Not set";
+  if (displayYear) displayYear.textContent = year || "Not set";
+  if (displayReg) displayReg.textContent = reg || "Not set";
 }
 
 function saveProfileDetails() {
@@ -914,7 +947,11 @@ function saveProfileDetails() {
     registrationNumber,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   }, { merge: true })
-    .then(() => setProfileStatus("Saved!", "#2e7d32"))
+    .then(() => {
+      setProfileStatus("Saved!", "#2e7d32");
+      updateProfileDisplay(name, department, year, registrationNumber);
+      setTimeout(() => hideProfileEditForm(), 800);
+    })
     .catch((err) => {
       console.error("Error saving profile", err);
       setProfileStatus("Could not save", "#d32f2f");
