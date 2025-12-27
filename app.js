@@ -1323,16 +1323,40 @@ async function loadOtherUserProfile(userId) {
 
     // Load target user's profile data
     const profileDoc = await db.collection("profiles").doc(userId).get();
-    if (!profileDoc.exists) {
-      document.getElementById("profileDisplayName").textContent = "User not found";
-      return;
-    }
+    
+    let name = "User";
+    let dept = "";
+    let year = "";
+    let reg = "";
+    let followerCount = 0;
+    let followingCount = 0;
 
-    const data = profileDoc.data();
-    const name = data.name || "User";
-    const dept = data.department || "";
-    const year = data.year || "";
-    const reg = data.registrationNumber || "";
+    if (profileDoc.exists) {
+      const data = profileDoc.data();
+      name = data.name || "User";
+      dept = data.department || "";
+      year = data.year || "";
+      reg = data.registrationNumber || "";
+      followerCount = data.followerCount || 0;
+      followingCount = data.followingCount || 0;
+    } else {
+      // Profile doesn't exist - try to get basic info from posts
+      const postsSnap = await db.collection("posts").where("authorId", "==", userId).limit(1).get();
+      if (!postsSnap.empty) {
+        name = postsSnap.docs[0].data().authorName || "User";
+      }
+      
+      // Create a basic profile document
+      await db.collection("profiles").doc(userId).set({
+        name: name,
+        department: "",
+        year: "",
+        registrationNumber: "",
+        followerCount: 0,
+        followingCount: 0,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
 
     // Update display
     updateProfileDisplay(name, dept, year, reg);
@@ -1340,8 +1364,8 @@ async function loadOtherUserProfile(userId) {
     // Update follower/following counts
     const followerCountEl = document.getElementById("followerCount");
     const followingCountEl = document.getElementById("followingCount");
-    if (followerCountEl) followerCountEl.textContent = String(data.followerCount || 0);
-    if (followingCountEl) followingCountEl.textContent = String(data.followingCount || 0);
+    if (followerCountEl) followerCountEl.textContent = String(followerCount);
+    if (followingCountEl) followingCountEl.textContent = String(followingCount);
 
     // Add follow button in header
     const headerActionsContainer = document.getElementById("profileEditBtn").parentElement;
