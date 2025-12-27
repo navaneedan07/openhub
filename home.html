@@ -169,6 +169,8 @@
       <div style="display:flex; gap:10px;">
         <a class="post-btn" href="dashboard.html" style="text-align:center;">✍️ Share an Idea</a>
         <a class="post-btn" href="dashboard.html" style="text-align:center;">✨ Try AI Assistant</a>
+        <button onclick="loadDemoDataAndRefresh()" class="post-btn" style="text-align:center;">📦 Load Demo Data</button>
+        <button onclick="boostMyInterests()" class="post-btn" style="text-align:center;">⚙️ Boost My Interests</button>
       </div>
     </section>
   </div>
@@ -241,6 +243,42 @@
         'club': 'clubs.html'
       };
       window.location.href = pages[type] || 'home.html';
+    }
+
+    async function loadDemoDataAndRefresh() {
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          alert('Please sign in first to load demo data.');
+          return;
+        }
+        await seedDemoData();
+        // Give the current user some starter interests so recommendations appear immediately
+        const starterTags = ['ai', 'coding', 'robotics', 'hackathon'];
+        for (const tag of starterTags) {
+          await aiDiscovery.trackUserInterest(user.uid, tag, 2);
+        }
+        await loadAIRecommendations(user.uid);
+        await loadSimilarUsers(user.uid);
+        alert('Demo data loaded and interests boosted. Recommendations are ready!');
+      } catch (e) {
+        console.error('Demo load failed', e);
+        alert('Could not load demo data: ' + (e?.message || e));
+      }
+    }
+
+    async function boostMyInterests() {
+      const user = auth.currentUser;
+      if (!user) {
+        alert('Please sign in first.');
+        return;
+      }
+      const tags = ['ai', 'coding', 'web-development', 'events'];
+      for (const tag of tags) {
+        await aiDiscovery.trackUserInterest(user.uid, tag, 1);
+      }
+      await loadAIRecommendations(user.uid);
+      alert('Interests boosted! Your recommendations will be richer.');
     }
   </script>
 </body>
