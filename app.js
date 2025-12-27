@@ -1015,9 +1015,9 @@ function loadProfileDetails(user) {
   const deptInput = document.getElementById("profileDept");
   const yearInput = document.getElementById("profileYear");
   const regInput = document.getElementById("profileReg");
-  if (!nameInput || !deptInput || !yearInput || !regInput || !user) return;
+  if (!nameInput || !deptInput || !yearInput || !regInput || !user) return Promise.resolve();
 
-  db.collection("profiles").doc(user.uid).get()
+  return db.collection("profiles").doc(user.uid).get()
     .then((doc) => {
       const data = doc.exists ? doc.data() : {};
       const name = data.name || user.displayName || "";
