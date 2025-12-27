@@ -76,6 +76,26 @@
         <p id="userEmail" style="font-size: 0.95em; color: #666;"></p>
       </div>
 
+      <!-- AI Smart Recommendations Section -->
+      <section style="margin-top: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h3 style="color: #667eea; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+          🤖 AI-Powered Recommendations
+        </h3>
+        <div id="recommendationsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+          <div style="text-align: center; padding: 40px; color: #999;">Loading personalized recommendations...</div>
+        </div>
+      </section>
+
+      <!-- Similar Users / Smart Matching -->
+      <section style="margin-top: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h3 style="color: #667eea; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+          👥 People With Similar Interests
+        </h3>
+        <div id="similarUsersContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+          <div style="text-align: center; padding: 20px; color: #999;">Finding matching members...</div>
+        </div>
+      </section>
+
       <!-- AI Smart Search Section -->
       <section style="margin-top:16px;">
         <div class="ai-features">
@@ -154,5 +174,74 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="ai-discovery.js"></script>
+  <script src="demo-data.js"></script>
+  <script src="feature-status.js"></script>
+  <script>
+    // Load AI recommendations when page loads
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadAIRecommendations(user.uid);
+        loadSimilarUsers(user.uid);
+      }
+    });
+
+    async function loadAIRecommendations(userId) {
+      const recommendations = await aiDiscovery.getRecommendations(userId, 6);
+      const container = document.getElementById('recommendationsContainer');
+      
+      if (recommendations.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999; grid-column: 1/-1;">Start interacting with posts and events to get personalized recommendations!</div>';
+        return;
+      }
+
+      container.innerHTML = recommendations.map(item => `
+        <div style="padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
+          <div style="font-size: 0.85em; color: #667eea; font-weight: 600; margin-bottom: 5px;">
+            ${item.type.toUpperCase()} • Relevance: ${Math.round(item.score * 100 / 10)}%
+          </div>
+          <h4 style="margin: 8px 0; color: #333;">${item.title}</h4>
+          <div style="font-size: 0.85em; color: #666; margin-bottom: 8px;">
+            ${item.tags.map(tag => `<span style="display: inline-block; background: #e4e7fb; padding: 3px 8px; border-radius: 4px; margin-right: 5px; margin-bottom: 4px;">${tag}</span>`).join('')}
+          </div>
+          <button onclick="viewItem('${item.type}', '${item.id}')" style="width: 100%; padding: 8px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">View ${item.type}</button>
+        </div>
+      `).join('');
+    }
+
+    async function loadSimilarUsers(userId) {
+      const similarUsers = await aiDiscovery.findSimilarUsers(userId, 5);
+      const container = document.getElementById('similarUsersContainer');
+      
+      if (similarUsers.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999; grid-column: 1/-1;">No users with similar interests yet.</div>';
+        return;
+      }
+
+      container.innerHTML = similarUsers.map(user => `
+        <div style="padding: 15px; background: #f8f9ff; border-radius: 8px; text-align: center; border: 1px solid #e4e7fb;">
+          <div style="font-size: 2em; margin-bottom: 10px;">👤</div>
+          <h4 style="margin: 8px 0; color: #333; word-break: break-word;">${user.name}</h4>
+          <div style="font-size: 0.85em; color: #667eea; font-weight: 600; margin: 8px 0;">
+            ${user.matchScore > 0 ? Math.round(user.matchScore * 10) + '% match' : 'New friend'}
+          </div>
+          <div style="font-size: 0.8em; color: #666; margin-bottom: 10px;">
+            ${user.commonInterests.slice(0, 2).join(', ')}${user.commonInterests.length > 2 ? '...' : ''}
+          </div>
+          <button style="width: 100%; padding: 8px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.9em;">Connect</button>
+        </div>
+      `).join('');
+    }
+
+    function viewItem(type, id) {
+      // Navigate to appropriate page
+      const pages = {
+        'post': 'dashboard.html',
+        'event': 'events.html',
+        'club': 'clubs.html'
+      };
+      window.location.href = pages[type] || 'home.html';
+    }
+  </script>
 </body>
 </html>

@@ -27,6 +27,10 @@ export default async function handler(req, res) {
       prompt = `Create a concise outline with 5-7 bullets for the following idea. Use short phrases, no long paragraphs.\n\n"${text}"`;
     } else if (mode === 'moderate') {
       prompt = `Is this text appropriate for a college platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`;
+    } else if (mode === 'tags') {
+      prompt = `Extract 3-5 main topics/tags from this content. Return ONLY comma-separated topics:\n\n"${text}"`;
+    } else if (mode === 'search') {
+      prompt = `Find and suggest 3-4 related search topics for: "${text}". Return as comma-separated list only.`;
     } else {
       return res.status(400).json({ error: 'Invalid mode' });
     }

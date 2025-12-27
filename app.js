@@ -172,25 +172,34 @@ function addPost() {
       return;
     }
 
-    db.collection("posts").add({
-      text: text,
-      authorName: user.displayName || "Anonymous",
-      authorEmail: user.email,
-      authorId: user.uid,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      createdAt: new Date()
-    })
-    .then(() => {
-      // Clear the input field and AI output
-      document.getElementById("postText").value = "";
-      const aiOutput = document.getElementById("aiOutput");
-      if (aiOutput) {
-        aiOutput.style.display = "none";
-      }
-    })
-    .catch((error) => {
-      alert("Error posting: " + error.message);
-      console.error(error);
+    // Auto-tag the post using AI
+    aiDiscovery.autoTagContent(text, "post").then((tags) => {
+      // Track user interests
+      tags.forEach(tag => {
+        aiDiscovery.trackUserInterest(user.uid, tag, 1);
+      });
+
+      db.collection("posts").add({
+        text: text,
+        authorName: user.displayName || "Anonymous",
+        authorEmail: user.email,
+        authorId: user.uid,
+        tags: tags, // AI-generated tags
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: new Date()
+      })
+      .then(() => {
+        // Clear the input field and AI output
+        document.getElementById("postText").value = "";
+        const aiOutput = document.getElementById("aiOutput");
+        if (aiOutput) {
+          aiOutput.style.display = "none";
+        }
+      })
+      .catch((error) => {
+        alert("Error posting: " + error.message);
+        console.error(error);
+      });
     });
   });
 }
@@ -211,11 +220,19 @@ function loadPosts() {
         const data = doc.data();
         const timestamp = data.timestamp ? data.timestamp.toDate() : new Date(data.createdAt);
         const timeString = formatTime(timestamp);
+        const tags = data.tags || [];
         
         const postElement = document.createElement("div");
         postElement.className = "post";
+        let tagsHTML = '';
+        if (tags.length > 0) {
+          tagsHTML = `<div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px;">
+            ${tags.map(tag => `<span style="display: inline-block; background: #e4e7fb; color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">#${tag}</span>`).join('')}
+          </div>`;
+        }
         postElement.innerHTML = `
           <div class="post-text">${escapeHtml(data.text)}</div>
+          ${tagsHTML}
           <div class="post-meta">
             <span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>
             <span>⏰ ${timeString}</span>
@@ -508,6 +525,28 @@ function generateSmartFallback(prompt, mode) {
   }
 }
 
+async function moderateContent(text) {
+  try {
+    const response = await fetch("/api/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: `Is this text appropriate for a college community platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`,
+        mode: "moderate"
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return /yes/i.test(data.result);
+    }
+    return true; // Default to approve if API fails
+  } catch (error) {
+    console.error("Error moderating content:", error);
+    return true; // Default to approve if API fails
+  }
+}
+
 async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
@@ -607,7 +646,7 @@ async function searchWithAI(query) {
 
 async function performAISearch() {
   const searchBox = document.getElementById("aiSearchBox");
-  const query = searchBox.value.trim();
+  const query = searchBox.value.trim().toLowerCase();
   
   if (!query) {
     alert("Please enter a search query!");
@@ -615,14 +654,94 @@ async function performAISearch() {
   }
 
   const resultsDiv = document.getElementById("aiSearchResults");
-  resultsDiv.innerHTML = "<div class='ai-output-header'>⏳ Searching...</div>";
+  resultsDiv.innerHTML = "<div class='ai-output-header'>⏳ Searching with AI...</div>";
   resultsDiv.style.display = "block";
 
-  const results = await callGeminiAPI(query, "search");
+  try {
+    // Search posts, events, and clubs that match the query
+    const postsSnapshot = await db.collection("posts").limit(50).get();
+    const eventsSnapshot = await db.collection("events").limit(50).get();
+    const clubsSnapshot = await db.collection("clubs").limit(50).get();
 
-  if (results) {
-    resultsDiv.innerHTML = `<div class='ai-output-header'>🎯 AI Search Results for "${query}"</div><p>${results.replace(/\n/g, '<br>')}</p>`;
-  } else {
+    let allResults = [];
+
+    // Check posts
+    postsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const text = data.text?.toLowerCase() || "";
+      const tags = (data.tags || []).map(t => t.toLowerCase());
+      
+      if (text.includes(query) || tags.some(t => t.includes(query))) {
+        allResults.push({
+          type: "📝 Post",
+          title: text.substring(0, 60) + "...",
+          author: data.authorName,
+          tags: data.tags || [],
+          relevance: text.includes(query) ? "High" : "Medium"
+        });
+      }
+    });
+
+    // Check events
+    eventsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const name = data.name?.toLowerCase() || "";
+      const description = data.description?.toLowerCase() || "";
+      const tags = (data.tags || []).map(t => t.toLowerCase());
+      
+      if (name.includes(query) || description.includes(query) || tags.some(t => t.includes(query))) {
+        allResults.push({
+          type: "📅 Event",
+          title: data.name,
+          author: data.organizer || "OpenHub",
+          tags: data.tags || [],
+          relevance: name.includes(query) ? "High" : "Medium"
+        });
+      }
+    });
+
+    // Check clubs
+    clubsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const name = data.name?.toLowerCase() || "";
+      const description = data.description?.toLowerCase() || "";
+      const tags = (data.tags || []).map(t => t.toLowerCase());
+      
+      if (name.includes(query) || description.includes(query) || tags.some(t => t.includes(query))) {
+        allResults.push({
+          type: "🤝 Club",
+          title: data.name,
+          author: data.leader || "OpenHub",
+          tags: data.tags || [],
+          relevance: name.includes(query) ? "High" : "Medium"
+        });
+      }
+    });
+
+    if (allResults.length === 0) {
+      resultsDiv.innerHTML = `<div class='ai-output-header'>😔 No results found for "${query}"</div>
+        <p>Try searching for topics like: "coding", "event", "club", "project"</p>`;
+      return;
+    }
+
+    // Display results
+    let resultsHTML = `<div class='ai-output-header'>🎯 Found ${allResults.length} result${allResults.length !== 1 ? 's' : ''} for "${query}"</div>`;
+    
+    allResults.slice(0, 10).forEach(result => {
+      resultsHTML += `
+        <div style="padding: 12px; margin-bottom: 10px; background: #f8f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+          <div style="font-weight: 600; color: #667eea; margin-bottom: 5px;">${result.type}</div>
+          <div style="color: #333; margin-bottom: 5px; font-weight: 500;">${result.title}</div>
+          <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">By ${result.author}</div>
+          ${result.tags.length > 0 ? `<div style="font-size: 0.8em;">${result.tags.slice(0, 3).map(t => `<span style="display: inline-block; background: #e4e7fb; padding: 2px 6px; border-radius: 3px; margin-right: 5px; margin-bottom: 4px;">${t}</span>`).join('')}</div>` : ''}
+          <div style="font-size: 0.8em; color: #667eea; margin-top: 5px;">Relevance: ${result.relevance}</div>
+        </div>
+      `;
+    });
+
+    resultsDiv.innerHTML = resultsHTML;
+  } catch (error) {
+    console.error("Search error:", error);
     resultsDiv.innerHTML = "<p style='color: #d9534f;'>Search failed. Please try again.</p>";
   }
 }
