@@ -116,11 +116,19 @@ if (window.location.pathname.includes('profile.html')) {
     if (!user) {
       window.location.href = "index.html";
     } else {
+      const viewUserId = getQueryParam("userId");
+      const isOwnProfile = !viewUserId || viewUserId === user.uid;
+      
       displayUserInfo(user);
       setAvatarSafe(user, 'avatarImgProf', 'avatarInitialProf');
-      bindProfileForm(user);
-      loadProfileDetails(user);
-      loadUserProfile(user);
+      
+      if (isOwnProfile) {
+        bindProfileForm(user);
+        loadProfileDetails(user);
+        loadUserProfile(user);
+      } else {
+        loadOtherUserProfile(viewUserId);
+      }
     }
   });
 }
@@ -284,6 +292,57 @@ function addPost() {
   });
 }
 
+// Delete a post
+async function deletePost(postId) {
+  if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to delete posts.");
+    return;
+  }
+
+  try {
+    const postRef = db.collection("posts").doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) {
+      alert("Post not found.");
+      return;
+    }
+
+    if (postDoc.data().authorId !== user.uid) {
+      alert("You can only delete your own posts.");
+      return;
+    }
+
+    // Delete all comments first
+    const commentsSnap = await postRef.collection("comments").get();
+    const batch = db.batch();
+    commentsSnap.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete the post itself
+    batch.delete(postRef);
+    await batch.commit();
+
+    alert("Post deleted successfully.");
+    
+    // Redirect if on thread page
+    if (window.location.pathname.includes('thread.html')) {
+      window.location.href = 'home.html';
+    } else {
+      window.location.reload();
+    }
+  } catch (err) {
+    console.error("Error deleting post:", err);
+    alert("Could not delete post. Please try again.");
+  }
+}
+
 function isAdminUser(user) {
   const email = (user?.email || "").toLowerCase();
   return ADMIN_EMAILS.some((e) => e.toLowerCase() === email);
@@ -358,17 +417,22 @@ function loadPosts() {
             ${tags.map(tag => `<span style="display: inline-block; background: #e4e7fb; color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">#${tag}</span>`).join('')}
           </div>`;
         }
+        const isOwnPost = auth.currentUser && authorId === auth.currentUser.uid;
+        const deleteBtn = isOwnPost ? `<button class="ghost-btn" onclick="deletePost('${doc.id}')" style="color:#d32f2f;">🗑️ Delete</button>` : '';
+        const authorLink = authorId ? `<span class="post-author" style="cursor:pointer; color:#667eea;" onclick="window.location.href='profile.html?userId=${authorId}'">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>` : `<span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>`;
+        
         postElement.innerHTML = `
           <div class="post-text">${escapeHtml(data.text)}</div>
           ${tagsHTML}
           ${attachmentHTML}
           <div class="post-meta">
-            <span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>
+            ${authorLink}
             <span>⏰ ${timeString}</span>
           </div>
           <div class="post-actions">
             <button class="ghost-btn" onclick="window.location.href='thread.html?id=${doc.id}'">💬 Open forum</button>
             <span class="comment-count">💬 ${commentCount} repl${commentCount === 1 ? 'y' : 'ies'}</span>
+            ${deleteBtn}
           </div>
           <div class="comments-block">
             <div id="${commentsContainerId}" class="comments-list"></div>
@@ -603,16 +667,21 @@ async function loadThread() {
     currentThreadPostId = doc.id;
     commentPaging[doc.id] = { last: null, done: false };
 
+    const isOwnPost = auth.currentUser && authorId === auth.currentUser.uid;
+    const deleteBtn = isOwnPost ? `<button class="ghost-btn" onclick="deletePost('${doc.id}')" style="color:#d32f2f; margin-top:10px;">🗑️ Delete this post</button>` : '';
+    const authorLink = authorId ? `<span class="post-author" style="cursor:pointer; color:#667eea;" onclick="window.location.href='profile.html?userId=${authorId}'">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>` : `<span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>`;
+
     postContainer.innerHTML = `
       <div class="post">
         <div class="post-text">${escapeHtml(data.text)}</div>
         ${tagsHTML}
         ${attachmentHTML}
         <div class="post-meta">
-          <span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>
+          ${authorLink}
           <span>⏰ ${formatTime(timestamp)}</span>
           <span id="followAuthorContainer" style="margin-left:10px;"></span>
         </div>
+        ${deleteBtn}
       </div>
       <div class="comments-block">
         <div id="${commentsContainerId}" class="comments-list"></div>
@@ -1239,6 +1308,171 @@ function setProfileAvatar(user) {
 function getQueryParam(key) {
   const params = new URLSearchParams(window.location.search);
   return params.get(key);
+}
+
+// Load another user's profile
+async function loadOtherUserProfile(userId) {
+  if (!userId) return;
+
+  try {
+    // Hide edit button and form for other users
+    const editBtn = document.getElementById("profileEditBtn");
+    const editCard = document.getElementById("profileEditCard");
+    if (editBtn) editBtn.style.display = "none";
+    if (editCard) editCard.style.display = "none";
+
+    // Load target user's profile data
+    const profileDoc = await db.collection("profiles").doc(userId).get();
+    if (!profileDoc.exists) {
+      document.getElementById("profileDisplayName").textContent = "User not found";
+      return;
+    }
+
+    const data = profileDoc.data();
+    const name = data.name || "User";
+    const dept = data.department || "";
+    const year = data.year || "";
+    const reg = data.registrationNumber || "";
+
+    // Update display
+    updateProfileDisplay(name, dept, year, reg);
+
+    // Update follower/following counts
+    const followerCountEl = document.getElementById("followerCount");
+    const followingCountEl = document.getElementById("followingCount");
+    if (followerCountEl) followerCountEl.textContent = String(data.followerCount || 0);
+    if (followingCountEl) followingCountEl.textContent = String(data.followingCount || 0);
+
+    // Add follow button in header
+    const headerActionsContainer = document.getElementById("profileEditBtn").parentElement;
+    const followBtnContainer = document.createElement("div");
+    followBtnContainer.id = "profileFollowContainer";
+    followBtnContainer.style.cssText = "margin-left:12px;";
+    headerActionsContainer.appendChild(followBtnContainer);
+    
+    await setupProfileFollowButton(userId, name);
+
+    // Load their posts and clubs
+    loadOtherUserPosts(userId);
+    loadOtherUserClubs(userId);
+  } catch (err) {
+    console.error("Error loading other user profile", err);
+  }
+}
+
+// Setup follow button on profile page
+async function setupProfileFollowButton(targetUserId, targetName = "user") {
+  const container = document.getElementById("profileFollowContainer");
+  const current = auth.currentUser;
+  if (!container || !targetUserId || !current || targetUserId === current.uid) {
+    if (container) container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `<button id="profileFollowBtn" style="padding:10px 24px; border:1px solid #667eea; background:#fff; color:#667eea; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">Follow</button>`;
+  const btn = document.getElementById("profileFollowBtn");
+  if (!btn) return;
+
+  const setState = (isFollowing, loading = false) => {
+    btn.textContent = loading ? "..." : isFollowing ? "✓ Following" : "Follow";
+    btn.style.opacity = loading ? "0.6" : "1";
+    btn.disabled = loading;
+    if (isFollowing) {
+      btn.style.background = "#667eea";
+      btn.style.color = "#fff";
+    } else {
+      btn.style.background = "#fff";
+      btn.style.color = "#667eea";
+    }
+  };
+
+  try {
+    const doc = await db.collection("following").doc(current.uid).collection("users").doc(targetUserId).get();
+    let isFollowing = doc.exists;
+    setState(isFollowing);
+
+    btn.onclick = async () => {
+      setState(isFollowing, true);
+      try {
+        if (isFollowing) {
+          await unfollowUser(targetUserId);
+        } else {
+          await followUser(targetUserId);
+        }
+        isFollowing = !isFollowing;
+        setState(isFollowing);
+        
+        // Update count display
+        const followerCountEl = document.getElementById("followerCount");
+        if (followerCountEl) {
+          const currentCount = parseInt(followerCountEl.textContent) || 0;
+          followerCountEl.textContent = String(currentCount + (isFollowing ? 1 : -1));
+        }
+      } catch (err) {
+        console.error("Follow toggle failed", err);
+        setState(isFollowing);
+        alert(`Could not update follow for ${targetName}.`);
+      }
+    };
+  } catch (err) {
+    console.error("Error checking follow state", err);
+    container.innerHTML = "";
+  }
+}
+
+function loadOtherUserPosts(userId) {
+  const postsTarget = document.getElementById("userPosts");
+  if (!postsTarget) return;
+
+  db.collection("posts").where("authorId", "==", userId).orderBy("timestamp", "desc").limit(50).get()
+    .then((snap) => {
+      postsTarget.innerHTML = "";
+      if (snap.empty) {
+        postsTarget.innerHTML = '<div class="no-posts">No posts yet.</div>';
+        return;
+      }
+      snap.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp ? data.timestamp.toDate() : new Date(data.createdAt);
+        const timeString = formatTime(timestamp);
+        const el = document.createElement("div");
+        el.className = "post";
+        el.innerHTML = `
+          <div class="post-text">${escapeHtml(data.text)}</div>
+          <div class="post-meta"><span class="post-author">👤 ${escapeHtml(data.authorName || "User")}</span><span>⏰ ${timeString}</span></div>
+        `;
+        postsTarget.appendChild(el);
+      });
+    })
+    .catch((err) => {
+      console.error("Error loading user posts", err);
+      postsTarget.innerHTML = '<div class="no-posts">Could not load posts.</div>';
+    });
+}
+
+function loadOtherUserClubs(userId) {
+  const clubsTarget = document.getElementById("userClubs");
+  if (!clubsTarget) return;
+
+  db.collection("club_members").where("userId", "==", userId).limit(50).get()
+    .then((snap) => {
+      clubsTarget.innerHTML = "";
+      if (snap.empty) {
+        clubsTarget.innerHTML = '<div class="no-posts">Not a member of any clubs yet.</div>';
+        return;
+      }
+      snap.forEach((doc) => {
+        const d = doc.data();
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerHTML = `<h4>${escapeHtml(d.clubName)}</h4><p>Member</p>`;
+        clubsTarget.appendChild(el);
+      });
+    })
+    .catch((err) => {
+      console.error("Error loading user clubs", err);
+      clubsTarget.innerHTML = '<div class="no-posts">Could not load clubs.</div>';
+    });
 }
 
 function extractMentions(text) {

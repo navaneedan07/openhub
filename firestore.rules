@@ -76,5 +76,11 @@ service cloud.firestore {
       allow create, delete: if request.auth != null && request.auth.uid == userId;
       allow update: if false;
     }
+
+    // User interests for AI recommendations
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }
