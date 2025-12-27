@@ -377,10 +377,17 @@ function addPost() {
     let attachment = null;
 
     const processPost = async () => {
-      if (attachmentFile) {
-        attachment = await uploadAttachment(attachmentFile);
-      } else if (attachmentLink) {
-        attachment = buildLinkAttachment(attachmentLink);
+      // Handle attachment upload with user-friendly errors
+      try {
+        if (attachmentFile) {
+          attachment = await uploadAttachment(attachmentFile);
+        } else if (attachmentLink) {
+          attachment = buildLinkAttachment(attachmentLink);
+        }
+      } catch (e) {
+        console.error("Attachment upload failed", e);
+        alert((e && e.message) ? e.message : "Attachment upload failed. Try a smaller image or share a link instead.");
+        return; // abort posting if attachment fails
       }
 
       // Auto-tag the post using AI
@@ -490,6 +497,7 @@ function renderAttachment(attachment) {
   if (!attachment || !attachment.url) return "";
   const label = attachment.name || (attachment.attachmentType === "link" ? "Attachment link" : "Attachment");
   const sizeLabel = attachment.size ? ` · ${Math.round(attachment.size / 1024)} KB` : "";
+  // Embedded base64 image
   if (attachment.attachmentType === 'image-base64') {
     return `
       <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
@@ -501,6 +509,20 @@ function renderAttachment(attachment) {
       </div>
     `;
   }
+  // Direct image URLs (e.g., Firebase Storage)
+  const isImageUrl = (attachment.type && attachment.type.startsWith('image')) || /\.(png|jpg|jpeg|gif|webp)$/i.test(attachment.url);
+  if (isImageUrl) {
+    return `
+      <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
+        <img src="${attachment.url}" alt="Image attachment" style="max-width:200px; max-height:120px; border-radius:6px;" />
+        <div>
+          <div style="font-weight:600; color:#667eea;">📎 ${escapeHtml(label)}${sizeLabel}</div>
+          <div style="font-size:0.85em; color:#666;">Image file</div>
+        </div>
+      </div>
+    `;
+  }
+  // Other file or link
   return `
     <div class="attachment-chip">
       <span class="attachment-icon">📎</span>
