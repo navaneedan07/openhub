@@ -379,6 +379,9 @@ function loadPosts() {
         `;
         postsDiv.appendChild(postElement);
 
+
+        // Show follow/unfollow for the author when applicable
+        setupFollowAuthorButton(authorId, data.authorName || "this user");
         subscribeToComments(doc.id, commentsContainerId);
       });
     }, (error) => {
@@ -588,6 +591,7 @@ async function loadThread() {
       data.commentCount = 0;
     }
     const timestamp = data.timestamp ? data.timestamp.toDate() : new Date(data.createdAt);
+    const authorId = data.authorId;
     const tags = data.tags || [];
     const attachmentHTML = renderAttachment(data.attachment);
 
@@ -606,6 +610,7 @@ async function loadThread() {
         <div class="post-meta">
           <span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>
           <span>⏰ ${formatTime(timestamp)}</span>
+          <span id="followAuthorContainer" style="margin-left:10px;"></span>
         </div>
       </div>
       <div class="comments-block">
@@ -1004,6 +1009,57 @@ async function unfollowUser(targetUserId) {
   } catch (err) {
     console.error("Error unfollowing user", err);
     alert("Could not unfollow. Please try again.");
+  }
+}
+
+// Wire follow/unfollow UI for a target user (e.g., thread author)
+async function setupFollowAuthorButton(targetUserId, targetName = "user") {
+  const container = document.getElementById("followAuthorContainer");
+  const current = auth.currentUser;
+  if (!container) return;
+
+  // Do not show if missing target or self
+  if (!targetUserId || !current || targetUserId === current.uid) {
+    container.innerHTML = "";
+    return;
+  }
+
+  // Base button element
+  container.innerHTML = `<button id="followAuthorBtn" style="margin-left:10px; padding:6px 12px; border:1px solid #667eea; background:#fff; color:#667eea; border-radius:6px; font-weight:600; cursor:pointer; font-size:12px;">Follow</button>`;
+  const btn = document.getElementById("followAuthorBtn");
+  if (!btn) return;
+
+  const setState = (isFollowing, loading = false) => {
+    btn.textContent = loading ? "..." : isFollowing ? "Following" : "Follow";
+    btn.style.opacity = loading ? "0.6" : "1";
+    btn.disabled = loading;
+  };
+
+  // Check current follow state
+  try {
+    const doc = await db.collection("following").doc(current.uid).collection("users").doc(targetUserId).get();
+    let isFollowing = doc.exists;
+    setState(isFollowing);
+
+    btn.onclick = async () => {
+      setState(isFollowing, true);
+      try {
+        if (isFollowing) {
+          await unfollowUser(targetUserId);
+        } else {
+          await followUser(targetUserId);
+        }
+        isFollowing = !isFollowing;
+        setState(isFollowing);
+      } catch (err) {
+        console.error("Follow toggle failed", err);
+        setState(isFollowing);
+        alert(`Could not update follow for ${targetName}. Please try again.`);
+      }
+    };
+  } catch (err) {
+    console.error("Error checking follow state", err);
+    container.innerHTML = "";
   }
 }
 

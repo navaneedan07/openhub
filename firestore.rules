@@ -56,8 +56,8 @@ service cloud.firestore {
           // Allow follower/following count adjustments of +/-1 by authenticated users
           request.resource.data.diff(resource.data).changedKeys().hasOnly(['followerCount']) &&
           (
-            request.resource.data.followerCount == (resource.data.followerCount ?? 0) + 1 ||
-            request.resource.data.followerCount == (resource.data.followerCount ?? 0) - 1
+            request.resource.data.followerCount == ((resource.data.followerCount == null ? 0 : resource.data.followerCount) + 1) ||
+            request.resource.data.followerCount == ((resource.data.followerCount == null ? 0 : resource.data.followerCount) - 1)
           )
         )
       );
