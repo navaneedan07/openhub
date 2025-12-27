@@ -118,6 +118,8 @@ if (window.location.pathname.includes('profile.html')) {
     } else {
       displayUserInfo(user);
       setAvatarSafe(user, 'avatarImgProf', 'avatarInitialProf');
+      bindProfileForm(user);
+      loadProfileDetails(user);
       loadUserProfile(user);
     }
   });
@@ -843,6 +845,80 @@ function renderResources(list) {
     li.innerHTML = `<a href="${r.url}" target="_blank">${escapeHtml(r.title)}</a>`;
     target.appendChild(li);
   });
+}
+
+function bindProfileForm(user) {
+  const saveBtn = document.getElementById("profileSaveBtn");
+  if (saveBtn) saveBtn.onclick = () => saveProfileDetails();
+}
+
+function setProfileStatus(text, color = "#4a5bdc") {
+  const status = document.getElementById("profileSaveStatus");
+  if (status) {
+    status.textContent = text || "";
+    status.style.color = color;
+  }
+}
+
+function loadProfileDetails(user) {
+  const nameInput = document.getElementById("profileName");
+  const deptInput = document.getElementById("profileDept");
+  const yearInput = document.getElementById("profileYear");
+  const regInput = document.getElementById("profileReg");
+  if (!nameInput || !deptInput || !yearInput || !regInput || !user) return;
+
+  setProfileStatus("Loading profile...");
+  db.collection("profiles").doc(user.uid).get()
+    .then((doc) => {
+      const data = doc.exists ? doc.data() : {};
+      nameInput.value = data.name || user.displayName || "";
+      deptInput.value = data.department || "";
+      yearInput.value = data.year || "";
+      regInput.value = data.registrationNumber || "";
+      setProfileStatus("", "#4a5bdc");
+    })
+    .catch((err) => {
+      console.error("Error loading profile details", err);
+      setProfileStatus("Could not load profile", "#d32f2f");
+    });
+}
+
+function saveProfileDetails() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to save your profile.");
+    return;
+  }
+
+  const nameInput = document.getElementById("profileName");
+  const deptInput = document.getElementById("profileDept");
+  const yearInput = document.getElementById("profileYear");
+  const regInput = document.getElementById("profileReg");
+  if (!nameInput || !deptInput || !yearInput || !regInput) return;
+
+  const name = nameInput.value.trim();
+  const department = deptInput.value.trim();
+  const year = yearInput.value.trim();
+  const registrationNumber = regInput.value.trim();
+
+  if (!name) {
+    setProfileStatus("Name is required", "#d32f2f");
+    return;
+  }
+
+  setProfileStatus("Saving...");
+  db.collection("profiles").doc(user.uid).set({
+    name,
+    department,
+    year,
+    registrationNumber,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true })
+    .then(() => setProfileStatus("Saved!", "#2e7d32"))
+    .catch((err) => {
+      console.error("Error saving profile", err);
+      setProfileStatus("Could not save", "#d32f2f");
+    });
 }
 
 function loadUserProfile(user) {

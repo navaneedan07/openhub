@@ -75,6 +75,31 @@
       <h3 style="color:#667eea; margin-bottom:10px;">📄 My Posts</h3>
       <div id="userPosts"></div>
     </section>
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="color:#667eea; margin-bottom:10px;">📝 Profile Details</h3>
+        <div style="display:grid; gap:10px; max-width:520px;">
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
+            Name
+            <input id="profileName" type="text" placeholder="Your name" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
+          </label>
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
+            Department
+            <input id="profileDept" type="text" placeholder="e.g., CSE" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
+          </label>
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
+            Year
+            <input id="profileYear" type="text" placeholder="e.g., 3" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
+          </label>
+          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
+            Registration No.
+            <input id="profileReg" type="text" placeholder="e.g., 21CSE001" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
+          </label>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button class="ghost-btn" id="profileSaveBtn">💾 Save</button>
+            <div id="profileSaveStatus" style="color:#4a5bdc; font-weight:600;"></div>
+          </div>
+        </div>
+      </div>
 
     <section style="margin-top:24px;">
       <h3 style="color:#667eea; margin-bottom:10px;">🪪 My Clubs</h3>

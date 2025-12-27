@@ -10,8 +10,13 @@ service cloud.firestore {
         || (
           request.auth != null &&
           request.resource.data.diff(resource.data).changedKeys().hasOnly(['commentCount']) &&
-          ((request.resource.data.commentCount == (resource.data.commentCount ?? 0) + 1) ||
-           (resource.data.commentCount == null && request.resource.data.commentCount == 1))
+          (
+            (
+              request.resource.data.commentCount ==
+              ((resource.data.commentCount == null ? 0 : resource.data.commentCount) + 1)
+            ) ||
+            (resource.data.commentCount == null && request.resource.data.commentCount == 1)
+          )
         );
 
       // Replies on posts
@@ -40,6 +45,11 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if request.auth != null;
       allow create, update, delete: if false; // backend/admin only
+    }
+
+    // User profiles (editable by owner only)
+    match /profiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
