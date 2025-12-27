@@ -1042,7 +1042,12 @@ function loadProfileDetails(user) {
       
       // Update avatar with saved photo from Firestore
       if (data.photoURL) {
-        const userWithPhoto = { ...user, photoURL: data.photoURL };
+        const userWithPhoto = { 
+          ...user, 
+          photoURL: data.photoURL,
+          _avatarImgId: 'avatarImgProf',
+          _avatarInitialId: 'avatarInitialProf'
+        };
         setProfileAvatar(userWithPhoto);
       }
     })
