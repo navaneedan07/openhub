@@ -1323,13 +1323,15 @@ async function findSimilarUsersFor(userId) {
     const clubSim = jaccardSimilarity(mine.clubs, other.clubs);
     // Include even if partial match (one of tags or clubs has overlap, or both exist)
     const score = weights.tags * tagSim + weights.clubs * clubSim;
-    // Include all candidates, even weak matches
-    scored.push({ userId: otherId, score, tagSim, clubSim });
+    // Only include matches with at least 1% similarity
+    if (score >= 0.01) {
+      scored.push({ userId: otherId, score, tagSim, clubSim });
+    }
   }
 
-  // Sort by score descending, but keep weak matches if strong ones are missing
+  // Sort by score descending
   scored.sort((a, b) => b.score - a.score);
-  console.log("Scored", scored.length, "candidates, top 5:", scored.slice(0, 5));
+  console.log("Scored", scored.length, "candidates with >1% match, top 5:", scored.slice(0, 5));
 
   // Enrich with display names (best effort)
   const top = scored.slice(0, 5);
