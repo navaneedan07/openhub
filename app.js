@@ -1869,6 +1869,11 @@ async function loadOtherUserProfile(userId) {
     // Load their posts and clubs
     loadOtherUserPosts(userId);
     loadOtherUserClubs(userId);
+
+    // Show similar people for the current user (not the profile being viewed)
+    if (auth.currentUser) {
+      renderSimilarPeopleSection(auth.currentUser);
+    }
   } catch (err) {
     console.error("Error loading other user profile", err);
   }
