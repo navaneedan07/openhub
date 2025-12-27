@@ -941,6 +941,72 @@ function getSuffix(year) {
   return 'th';
 }
 
+// --- Followers / Following ---
+async function followUser(targetUserId) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to follow someone.");
+    return;
+  }
+  if (targetUserId === user.uid) return;
+
+  const followingDoc = db.collection("following").doc(user.uid).collection("users").doc(targetUserId);
+  const followerDoc = db.collection("followers").doc(targetUserId).collection("users").doc(user.uid);
+  const myProfile = db.collection("profiles").doc(user.uid);
+  const targetProfile = db.collection("profiles").doc(targetUserId);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const alreadyFollowing = await tx.get(followingDoc);
+      if (alreadyFollowing.exists) {
+        return; // no-op if already following
+      }
+      tx.set(followingDoc, {
+        userId: targetUserId,
+        followedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      tx.set(followerDoc, {
+        userId: user.uid,
+        followedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      tx.update(myProfile, { followingCount: firebase.firestore.FieldValue.increment(1) });
+      tx.update(targetProfile, { followerCount: firebase.firestore.FieldValue.increment(1) });
+    });
+  } catch (err) {
+    console.error("Error following user", err);
+    alert("Could not follow. Please try again.");
+  }
+}
+
+async function unfollowUser(targetUserId) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to unfollow.");
+    return;
+  }
+  if (targetUserId === user.uid) return;
+
+  const followingDoc = db.collection("following").doc(user.uid).collection("users").doc(targetUserId);
+  const followerDoc = db.collection("followers").doc(targetUserId).collection("users").doc(user.uid);
+  const myProfile = db.collection("profiles").doc(user.uid);
+  const targetProfile = db.collection("profiles").doc(targetUserId);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const rel = await tx.get(followingDoc);
+      if (!rel.exists) return; // no-op if not following
+
+      tx.delete(followingDoc);
+      tx.delete(followerDoc);
+      tx.update(myProfile, { followingCount: firebase.firestore.FieldValue.increment(-1) });
+      tx.update(targetProfile, { followerCount: firebase.firestore.FieldValue.increment(-1) });
+    });
+  } catch (err) {
+    console.error("Error unfollowing user", err);
+    alert("Could not unfollow. Please try again.");
+  }
+}
+
 function saveProfileDetails() {
   const user = auth.currentUser;
   if (!user) {
