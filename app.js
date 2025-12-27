@@ -87,11 +87,25 @@ async function checkProfileCompletion(user) {
 // Helper function to set avatar with DOM ready check
 function setAvatarSafe(user, avatarImgId, avatarInitialId) {
   // Wait a bit for DOM to be ready, then set avatar
-  setTimeout(() => {
+  setTimeout(async () => {
+    let photoURL = user.photoURL;
+    try {
+      if (user && user.uid && typeof db !== 'undefined') {
+        const profDoc = await db.collection("profiles").doc(user.uid).get();
+        const pdata = profDoc.exists ? profDoc.data() : null;
+        if (pdata && pdata.photoURL) {
+          photoURL = pdata.photoURL;
+        }
+      }
+    } catch (e) {
+      // Non-fatal: fallback to auth photoURL
+      console.warn("Could not load Firestore photoURL; using auth photoURL");
+    }
+
     setProfileAvatar({
       displayName: user.displayName,
       email: user.email,
-      photoURL: user.photoURL,
+      photoURL,
       _avatarImgId: avatarImgId,
       _avatarInitialId: avatarInitialId
     });
@@ -250,8 +264,25 @@ function clearAttachmentInputs() {
 }
 
 async function uploadAttachment(file) {
+  // Fallback: if Storage is unavailable, allow image attachments by embedding
+  // a compressed base64 data URL directly in the post. Other file types should
+  // be attached via link.
   if (!storage) {
-    throw new Error("File uploads are not enabled in this build.");
+    if (file.type && file.type.startsWith('image/')) {
+      const base64 = await resizeImageToBase64(file, 1024, 0.8);
+      if (!base64) throw new Error('Could not process image');
+      if (base64.length > 600000) {
+        throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
+      }
+      return {
+        url: base64,
+        name: file.name,
+        size: base64.length,
+        type: 'image',
+        attachmentType: 'image-base64'
+      };
+    }
+    throw new Error("File uploads require storage. Please attach a link instead.");
   }
 
   if (file.size > ATTACHMENT_SIZE_LIMIT) {
@@ -278,6 +309,37 @@ async function uploadAttachment(file) {
     storagePath: path,
     attachmentType: "file"
   };
+}
+
+// Promise-based image resize to base64 (JPEG)
+function resizeImageToBase64(file, size = 1024, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+
+          const scale = Math.max(size / img.width, size / img.height);
+          const x = (size - img.width * scale) / 2;
+          const y = (size - img.height * scale) / 2;
+          ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+          const base64 = canvas.toDataURL('image/jpeg', quality);
+          resolve(base64);
+        };
+        img.onerror = () => reject(new Error('Image load failed'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('File read failed'));
+      reader.readAsDataURL(file);
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 function buildLinkAttachment(link) {
@@ -428,6 +490,17 @@ function renderAttachment(attachment) {
   if (!attachment || !attachment.url) return "";
   const label = attachment.name || (attachment.attachmentType === "link" ? "Attachment link" : "Attachment");
   const sizeLabel = attachment.size ? ` · ${Math.round(attachment.size / 1024)} KB` : "";
+  if (attachment.attachmentType === 'image-base64') {
+    return `
+      <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
+        <img src="${attachment.url}" alt="Image attachment" style="max-width:200px; max-height:120px; border-radius:6px;" />
+        <div>
+          <div style="font-weight:600; color:#667eea;">📎 ${escapeHtml(label)}${sizeLabel}</div>
+          <div style="font-size:0.85em; color:#666;">Embedded image</div>
+        </div>
+      </div>
+    `;
+  }
   return `
     <div class="attachment-chip">
       <span class="attachment-icon">📎</span>
