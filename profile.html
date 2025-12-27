@@ -85,15 +85,17 @@
 
         <!-- Tabs -->
         <div style="display:flex; gap:32px; border-bottom:2px solid #e0e0e0; margin-top:24px;">
-          <div style="padding:12px 0; border-bottom:3px solid #667eea; margin-bottom:-2px; color:#667eea; font-weight:600; cursor:pointer;">Overview</div>
-          <div style="padding:12px 0; color:#666; cursor:pointer;">Posts</div>
-          <div style="padding:12px 0; color:#666; cursor:pointer;">Clubs</div>
+          <div id="tabOverview" class="profile-tab active" style="padding:12px 0; border-bottom:3px solid #667eea; margin-bottom:-2px; color:#667eea; font-weight:600; cursor:pointer;" onclick="switchTab('overview')">Overview</div>
+          <div id="tabPosts" class="profile-tab" style="padding:12px 0; color:#666; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px;" onclick="switchTab('posts')">Posts</div>
+          <div id="tabClubs" class="profile-tab" style="padding:12px 0; color:#666; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px;" onclick="switchTab('clubs')">Clubs</div>
         </div>
       </div>
 
       <!-- Profile Content -->
       <div style="padding:32px 40px; max-width:1200px;">
         
+        <!-- Overview Tab Content -->
+        <div id="contentOverview" class="tab-content">
         <!-- Profile Display Section -->
         <div id="profileDisplayCard" style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -146,18 +148,24 @@
             </div>
           </div>
         </div>
+        </div>
 
-        <!-- My Posts Section -->
+        <!-- Posts Tab Content -->
+        <div id="contentPosts" class="tab-content" style="display:none;">
         <div style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
           <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">My Posts</h2>
           <div id="userPosts"></div>
         </div>
+        </div>
 
-        <!-- My Clubs Section -->
+        <!-- Clubs Tab Content -->
+        <div id="contentClubs" class="tab-content" style="display:none;">
         <div style="background:#fff; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
           <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">My Clubs</h2>
           <div id="userClubs" class="card-grid"></div>
         </div>
+        </div>
+
       </div>
 
     </div>

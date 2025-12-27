@@ -1370,3 +1370,38 @@ async function performAISearch() {
     resultsDiv.innerHTML = "<p style='color: #d9534f;'>Search failed. Please try again.</p>";
   }
 }
+// Add this to app.js after getSuffix function
+function switchTab(tabName) {
+  // Hide all tab contents
+  const contents = document.querySelectorAll('.tab-content');
+  contents.forEach(c => c.style.display = 'none');
+  
+  // Remove active state from all tabs
+  const tabs = document.querySelectorAll('.profile-tab');
+  tabs.forEach(t => {
+    t.style.borderBottomColor = 'transparent';
+    t.style.color = '#666';
+    t.style.fontWeight = '400';
+  });
+  
+  // Show selected content and activate tab
+  if (tabName === 'overview') {
+    document.getElementById('contentOverview').style.display = 'block';
+    const tab = document.getElementById('tabOverview');
+    tab.style.borderBottomColor = '#667eea';
+    tab.style.color = '#667eea';
+    tab.style.fontWeight = '600';
+  } else if (tabName === 'posts') {
+    document.getElementById('contentPosts').style.display = 'block';
+    const tab = document.getElementById('tabPosts');
+    tab.style.borderBottomColor = '#667eea';
+    tab.style.color = '#667eea';
+    tab.style.fontWeight = '600';
+  } else if (tabName === 'clubs') {
+    document.getElementById('contentClubs').style.display = 'block';
+    const tab = document.getElementById('tabClubs');
+    tab.style.borderBottomColor = '#667eea';
+    tab.style.color = '#667eea';
+    tab.style.fontWeight = '600';
+  }
+}
