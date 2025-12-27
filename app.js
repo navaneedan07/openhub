@@ -403,7 +403,7 @@ function addPost() {
   const text = document.getElementById("postText").value.trim();
   const attachmentLink = (document.getElementById("attachmentLink")?.value || "").trim();
   const attachmentFile = document.getElementById("attachmentFile")?.files?.[0];
-  
+
   if (!text) {
     alert("Please write something before posting!");
     return;
@@ -415,130 +415,50 @@ function addPost() {
     return;
   }
 
-  // Check content before posting
-  moderateContent(text).then((isClean) => {
+  moderateContent(text).then(async (isClean) => {
     if (!isClean) {
       alert("Your post contains inappropriate content. Please revise.");
       return;
     }
 
     let attachment = null;
-
-    const processPost = async () => {
-      // Handle attachment upload with user-friendly errors
-      try {
-        if (attachmentFile) {
-          attachment = await uploadAttachment(attachmentFile);
-        } else if (attachmentLink) {
-          attachment = buildLinkAttachment(attachmentLink);
-        }
-      } catch (e) {
-        console.error("Attachment upload failed", e);
-        alert((e && e.message) ? e.message : "Attachment upload failed. Try a smaller image or share a link instead.");
-        return; // abort posting if attachment fails
+    try {
+      if (attachmentFile) {
+        attachment = await uploadAttachment(attachmentFile);
+      } else if (attachmentLink) {
+        attachment = buildLinkAttachment(attachmentLink);
       }
-
-      // Auto-tag the post using AI
-      const tags = await aiDiscovery.autoTagContent(text, "post");
-      tags.forEach(tag => aiDiscovery.trackUserInterest(user.uid, tag, 1));
-
-      await db.collection("posts").add({
-        text: text,
-        authorName: user.displayName || "Anonymous",
-        authorEmail: user.email,
-        authorId: user.uid,
-        tags: tags,
-        attachment: attachment,
-        commentCount: 0,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        createdAt: new Date()
-      });
-
-      document.getElementById("postText").value = "";
-      clearAttachmentInputs();
-      const aiOutput = document.getElementById("aiOutput");
-      if (!storage) {
-        // Try Cloudinary first for any file type
-        try {
-          const result = await uploadViaCloudinary(file);
-          return result;
-        } catch (e) {
-          console.warn("Cloudinary not available or failed:", e?.message || e);
-          // fallback to embedded image if it's an image
-          if (file.type && file.type.startsWith('image/')) {
-            const base64 = await resizeImageToBase64(file, 1024, 0.8);
-            if (!base64) throw new Error('Could not process image');
-            if (base64.length > 600000) {
-              throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
-            }
-            return {
-              url: base64,
-              name: file.name,
-              size: base64.length,
-              type: 'image',
-              attachmentType: 'image-base64'
-            };
-          }
-          throw new Error("File uploads require storage or Cloudinary. Please attach a link instead.");
-        }
-      }
-    const postRef = db.collection("posts").doc(postId);
-    const postDoc = await postRef.get();
-    
-    if (!postDoc.exists) {
-      alert("Post not found.");
+    } catch (e) {
+      console.error("Attachment upload failed", e);
+      alert((e && e.message) ? e.message : "Attachment upload failed. Try a smaller image or share a link instead.");
       return;
     }
 
-    if (postDoc.data().authorId !== user.uid) {
-      alert("You can only delete your own posts.");
-      return;
-    }
+    const tags = await aiDiscovery.autoTagContent(text, "post");
+    tags.forEach(tag => aiDiscovery.trackUserInterest(user.uid, tag, 1));
 
-    // Delete all comments first
-    const commentsSnap = await postRef.collection("comments").get();
-    const batch = db.batch();
-    commentsSnap.forEach(doc => {
-      batch.delete(doc.ref);
+    await db.collection("posts").add({
+      text,
+      authorName: user.displayName || "Anonymous",
+      authorEmail: user.email,
+      authorId: user.uid,
+      tags,
+      attachment,
+      commentCount: 0,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date()
     });
 
-    // Delete the post itself
-    batch.delete(postRef);
-    await batch.commit();
-
-    alert("Post deleted successfully.");
-    
-    // Redirect if on thread page
-    if (window.location.pathname.includes('thread.html')) {
-      window.location.href = 'home.html';
-    } else {
-      window.location.reload();
+    document.getElementById("postText").value = "";
+    clearAttachmentInputs();
+    const aiOutput = document.getElementById("aiOutput");
+    if (aiOutput) {
+      aiOutput.style.display = "none";
     }
-  } catch (err) {
-    console.error("Error deleting post:", err);
-    alert("Could not delete post. Please try again.");
-  }
-}
-
-function isAdminUser(user) {
-  const email = (user?.email || "").toLowerCase();
-  return ADMIN_EMAILS.some((e) => e.toLowerCase() === email);
-}
-
-async function showAdminImportIfAllowed(user) {
-  const section = document.getElementById('bulkClubImport');
-  if (!section || !user) return;
-  section.style.display = 'none';
-  let allowed = isAdminUser(user);
-  if (!allowed && user.getIdTokenResult) {
-    try {
-      const token = await user.getIdTokenResult();
-      allowed = !!token.claims?.admin;
-    } catch (err) {
-      console.warn('Admin claim check failed', err);
-    }
-  }
-  if (allowed) section.style.display = 'block';
+  }).catch((error) => {
+    alert("Error posting: " + error.message);
+    console.error(error);
+  });
 }
 
 function renderAttachment(attachment) {
@@ -1806,33 +1726,41 @@ function highlightMentions(text) {
 const GEMINI_PROXY_URL = "/api/gemini";
 
 function generateSmartFallback(prompt, mode) {
-  // Fallback when API fails
-  } catch (err) {
-    console.warn('Storage upload failed, trying Cloudinary:', err);
-    // Try Cloudinary as a secondary path
-    try {
-      const result = await uploadViaCloudinary(file);
-      return result;
-    } catch (e) {
-      console.warn("Cloudinary upload also failed:", e?.message || e);
-      if (file.type && file.type.startsWith('image/')) {
-        const base64 = await resizeImageToBase64(file, 1024, 0.8);
-        if (!base64) throw new Error('Could not process image');
-        if (base64.length > 600000) {
-          throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
-        }
-        return {
-          url: base64,
-          name: file.name,
-          size: base64.length,
-          type: 'image',
-          attachmentType: 'image-base64'
-        };
-      }
-      // Non-image: bubble up error so UI advises attaching a link
-      throw err;
+  const text = (prompt || "").trim();
+  if (!text) return "";
+
+  switch (mode) {
+    case "summary": {
+      const sentences = text.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+      const first = sentences[0] || text;
+      const summary = first.length > 240 ? first.slice(0, 240) + "…" : first;
+      return `Summary: ${summary}`;
     }
+    case "suggestions": {
+      return [
+        "Add specific details or examples.",
+        "Use clear tags to improve discovery.",
+        "Invite discussion with a question.",
+        "Keep tone friendly and inclusive."
+      ].join("\n");
+    }
+    case "outline": {
+      return [
+        "Title: Clarify topic",
+        "Intro: Why it matters",
+        "Points: Key ideas or steps",
+        "Call to action: How to engage"
+      ].join("\n");
+    }
+    default:
+      return text.length > 300 ? text.slice(0, 300) + "…" : text;
   }
+}
+
+async function moderateContent(text) {
+  try {
+    const response = await fetch(GEMINI_PROXY_URL, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text: `Is this text appropriate for a college community platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`,
@@ -1842,7 +1770,8 @@ function generateSmartFallback(prompt, mode) {
 
     if (response.ok) {
       const data = await response.json();
-      return /yes/i.test(data.result);
+      const resultText = data.result || data.text || "";
+      return /yes/i.test(resultText);
     }
     return true; // Default to approve if API fails
   } catch (error) {
