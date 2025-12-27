@@ -60,68 +60,107 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="main-content">
-      <div class="header-top">
-        <h2 class="brand-title">My Profile</h2>
-        <div class="header-actions">
-          <a class="profile-avatar" href="profile.html" title="My Profile">
-            <img id="avatarImgProf" alt="Profile" />
-            <span id="avatarInitialProf" style="display:none;">U</span>
-          </a>
+    <div class="main-content" style="background:#f8f9fa; padding:0;">
+      
+      <!-- Profile Header -->
+      <div style="background:#fff; padding:32px 40px; border-bottom:1px solid #e0e0e0;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px;">
+          <div style="display:flex; gap:24px; align-items:center;">
+            <div class="profile-avatar" style="width:100px; height:100px; border-radius:50%; background:#667eea; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:700; color:#fff; overflow:hidden;">
+              <img id="avatarImgProf" alt="Profile" style="width:100%; height:100%; object-fit:cover; display:none;" />
+              <span id="avatarInitialProf">U</span>
+            </div>
+            <div>
+              <h1 id="profileDisplayName" style="font-size:32px; font-weight:700; margin:0 0 8px 0; color:#1a1a1a;">User</h1>
+              <p id="profileDisplayTitle" style="font-size:16px; margin:0 0 12px 0; color:#666;">Student at Madras Institute of Technology</p>
+              <div style="display:flex; gap:16px; font-size:14px; color:#666;">
+                <span><strong id="followerCount">0</strong> Followers</span>
+                <span>•</span>
+                <span><strong id="followingCount">0</strong> Following</span>
+              </div>
+            </div>
+          </div>
+          <button id="profileEditBtn" style="padding:10px 24px; border:1px solid #667eea; background:#fff; color:#667eea; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">✏️ Edit Profile</button>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex; gap:32px; border-bottom:2px solid #e0e0e0; margin-top:24px;">
+          <div style="padding:12px 0; border-bottom:3px solid #667eea; margin-bottom:-2px; color:#667eea; font-weight:600; cursor:pointer;">Overview</div>
+          <div style="padding:12px 0; color:#666; cursor:pointer;">Posts</div>
+          <div style="padding:12px 0; color:#666; cursor:pointer;">Clubs</div>
         </div>
       </div>
 
-    <!-- Profile Display Card -->
-    <section style="margin-top:16px;">
-      <div id="profileDisplayCard" class="card" style="margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="color:#667eea; margin:0;">📝 Profile Details</h3>
-          <button class="ghost-btn" id="profileEditBtn">✏️ Edit</button>
-        </div>
-        <div style="display:grid; gap:8px; color:#333;">
-          <div><strong>Name:</strong> <span id="displayName">—</span></div>
-          <div><strong>Department:</strong> <span id="displayDept">—</span></div>
-          <div><strong>Year:</strong> <span id="displayYear">—</span></div>
-          <div><strong>Registration No.:</strong> <span id="displayReg">—</span></div>
-        </div>
-      </div>
-
-      <!-- Profile Edit Form (hidden by default) -->
-      <div id="profileEditCard" class="card" style="margin-bottom:16px; display:none;">
-        <h3 style="color:#667eea; margin-bottom:10px;">📝 Edit Profile</h3>
-        <div style="display:grid; gap:10px; max-width:520px;">
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
-            Name
-            <input id="profileName" type="text" placeholder="Your name" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
-          </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
-            Department
-            <input id="profileDept" type="text" placeholder="e.g., CSE" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
-          </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
-            Year
-            <input id="profileYear" type="text" placeholder="e.g., 3" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
-          </label>
-          <label style="display:flex; flex-direction:column; gap:4px; font-weight:600; color:#444;">
-            Registration No.
-            <input id="profileReg" type="text" placeholder="e.g., 21CSE001" style="padding:10px; border:1px solid #ddd; border-radius:8px;" />
-          </label>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button class="ghost-btn" id="profileSaveBtn">💾 Save</button>
-            <button class="ghost-btn" id="profileCancelBtn">Cancel</button>
-            <div id="profileSaveStatus" style="color:#4a5bdc; font-weight:600;"></div>
+      <!-- Profile Content -->
+      <div style="padding:32px 40px; max-width:1200px;">
+        
+        <!-- Profile Display Section -->
+        <div id="profileDisplayCard" style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="font-size:18px; font-weight:600; margin:0; color:#1a1a1a;">Profile Details ✏️</h2>
+          </div>
+          <div style="display:grid; gap:16px; color:#333;">
+            <div style="display:flex; gap:12px;">
+              <span style="font-weight:600; color:#666; min-width:140px;">Name:</span>
+              <span id="displayName" style="color:#1a1a1a;">—</span>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <span style="font-weight:600; color:#666; min-width:140px;">Department:</span>
+              <span id="displayDept" style="color:#1a1a1a;">—</span>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <span style="font-weight:600; color:#666; min-width:140px;">Year:</span>
+              <span id="displayYear" style="color:#1a1a1a;">—</span>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <span style="font-weight:600; color:#666; min-width:140px;">Registration No.:</span>
+              <span id="displayReg" style="color:#1a1a1a;">—</span>
+            </div>
           </div>
         </div>
+
+        <!-- Profile Edit Form (hidden by default) -->
+        <div id="profileEditCard" style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; display:none; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">Edit Profile</h2>
+          <div style="display:grid; gap:16px; max-width:600px;">
+            <div>
+              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Name</label>
+              <input id="profileName" type="text" placeholder="Your full name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Department</label>
+              <input id="profileDept" type="text" placeholder="e.g., Computer Technology" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Year</label>
+              <input id="profileYear" type="text" placeholder="e.g., 2" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Registration No.</label>
+              <input id="profileReg" type="text" placeholder="e.g., 2020503557" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+            </div>
+            <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+              <button id="profileSaveBtn" style="padding:12px 28px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">Save Changes</button>
+              <button id="profileCancelBtn" style="padding:12px 28px; background:#fff; color:#666; border:1px solid #ddd; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">Cancel</button>
+              <div id="profileSaveStatus" style="color:#4a5bdc; font-weight:600; font-size:14px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Posts Section -->
+        <div style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">My Posts</h2>
+          <div id="userPosts"></div>
+        </div>
+
+        <!-- My Clubs Section -->
+        <div style="background:#fff; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">My Clubs</h2>
+          <div id="userClubs" class="card-grid"></div>
+        </div>
       </div>
 
-      <h3 style="color:#667eea; margin-bottom:10px;">📄 My Posts</h3>
-      <div id="userPosts"></div>
-    </section>
-
-    <section style="margin-top:24px;">
-      <h3 style="color:#667eea; margin-bottom:10px;">🪪 My Clubs</h3>
-      <div id="userClubs" class="card-grid"></div>
-    </section>
+    </div>
     </div>
   </div>
 

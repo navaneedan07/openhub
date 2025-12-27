@@ -914,6 +914,25 @@ function updateProfileDisplay(name, dept, year, reg) {
   if (displayDept) displayDept.textContent = dept || "Not set";
   if (displayYear) displayYear.textContent = year || "Not set";
   if (displayReg) displayReg.textContent = reg || "Not set";
+  
+  // Update header display
+  const headerName = document.getElementById("profileDisplayName");
+  const headerTitle = document.getElementById("profileDisplayTitle");
+  if (headerName) headerName.textContent = name || "User";
+  if (headerTitle && dept && year) {
+    headerTitle.textContent = `${year}${year ? getSuffix(year) : ''} Year ${dept || ''} Student at MIT`;
+  } else if (dept) {
+    headerTitle.textContent = `${dept} Student at MIT`;
+  }
+}
+
+function getSuffix(year) {
+  const y = parseInt(year);
+  if (isNaN(y)) return '';
+  if (y === 1) return 'st';
+  if (y === 2) return 'nd';
+  if (y === 3) return 'rd';
+  return 'th';
 }
 
 function saveProfileDetails() {
