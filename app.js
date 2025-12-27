@@ -73,6 +73,8 @@ if (window.location.pathname.includes('dashboard.html')) {
         setAvatarSafe(user, 'avatarImgDash', 'avatarInitialDash');
         initializeAI();
         loadPosts();
+        // Show similar people recommendations
+        renderSimilarPeopleSection(user);
       });
     }
   });
@@ -1366,13 +1368,20 @@ async function renderSimilarPeopleSection(currentUser) {
     const suggestions = await findSimilarUsersFor(currentUser.uid);
     console.log("Found suggestions:", suggestions.length);
 
-    // Target the profile display card or create section after it
-    let container = document.getElementById("profileDisplayCard");
+    // Target the appropriate container based on the page
+    let container = document.getElementById("profileDisplayCard"); // profile page
     if (!container) {
-      container = document.getElementById("contentOverview");
+      container = document.getElementById("contentOverview"); // also profile page
     }
     if (!container) {
-      console.warn("No profile container found, using body");
+      container = document.getElementById("posts"); // dashboard page
+      if (container) {
+        // On dashboard, insert before the posts
+        container = container.parentElement;
+      }
+    }
+    if (!container) {
+      console.warn("No suitable container found, using body");
       container = document.body;
     }
 
@@ -1382,11 +1391,19 @@ async function renderSimilarPeopleSection(currentUser) {
       section = document.createElement("div");
       section.id = "similarPeopleSection";
       section.style.marginTop = "24px";
+      section.style.marginBottom = "24px";
       section.style.padding = "16px";
       section.style.backgroundColor = "#f8f9ff";
       section.style.borderRadius = "8px";
-      container.appendChild(section);
-      console.log("Created similarPeopleSection, appended to", container.id);
+      
+      // On dashboard, insert before the posts heading
+      const postsEl = document.getElementById("posts");
+      if (postsEl && postsEl.previousElementSibling) {
+        postsEl.previousElementSibling.insertAdjacentElement('beforebegin', section);
+      } else {
+        container.appendChild(section);
+      }
+      console.log("Created similarPeopleSection");
     }
 
     if (!suggestions.length) {
