@@ -166,9 +166,10 @@ if (window.location.pathname.includes('profile.html')) {
       const isOwnProfile = !viewUserId || viewUserId === user.uid;
       
       displayUserInfo(user);
-      setAvatarSafe(user, 'avatarImgProf', 'avatarInitialProf');
       
       if (isOwnProfile) {
+        // Show current user's avatar
+        setAvatarSafe(user, 'avatarImgProf', 'avatarInitialProf');
         bindProfileForm(user);
         loadProfileDetails(user).then(() => {
           // Check if profile is incomplete and show edit form
@@ -185,6 +186,7 @@ if (window.location.pathname.includes('profile.html')) {
         });
         loadUserProfile(user);
       } else {
+        // Show other user's avatar
         loadOtherUserProfile(viewUserId);
       }
     }
@@ -1388,6 +1390,8 @@ async function loadOtherUserProfile(userId) {
     let reg = "";
     let followerCount = 0;
     let followingCount = 0;
+    let photoURL = null;
+    let displayName = null;
 
     if (profileDoc.exists) {
       const data = profileDoc.data();
@@ -1401,6 +1405,31 @@ async function loadOtherUserProfile(userId) {
       // Profile doesn't exist - try to get basic info from posts
       const postsSnap = await db.collection("posts").where("authorId", "==", userId).limit(1).get();
       if (!postsSnap.empty) {
+        const postData = postsSnap.docs[0].data();
+        name = postData.authorName || "User";
+        displayName = postData.authorName;
+      }
+      
+      // Create a basic profile document
+      await db.collection("profiles").doc(userId).set({
+        name: name,
+        department: "",
+        year: "",
+        registrationNumber: "",
+        followerCount: 0,
+        followingCount: 0,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+
+    // Set other user's avatar
+    setProfileAvatar({
+      displayName: displayName || name,
+      email: "",
+      photoURL: photoURL,
+      _avatarImgId: 'avatarImgProf',
+      _avatarInitialId: 'avatarInitialProf'
+    });
         name = postsSnap.docs[0].data().authorName || "User";
       }
       
