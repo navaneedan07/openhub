@@ -7,6 +7,7 @@ const ATTACHMENT_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
 const COMMENTS_PAGE_SIZE = 15;
 let currentThreadPostId = null;
 let replyContext = { parentId: null, parentAuthor: null };
+const ADMIN_EMAILS = ["teamscangs@gmail.com"]; // replace with allowed admin emails
 
 // Google AI Setup
 let genAI = null;
@@ -92,8 +93,7 @@ if (window.location.pathname.includes('clubs.html')) {
     } else {
       setAvatarSafe(user, 'avatarImgCl', 'avatarInitialCl');
       loadClubs();
-      const importSection = document.getElementById('bulkClubImport');
-      if (importSection) importSection.style.display = 'block';
+      showAdminImportIfAllowed(user);
     }
   });
 }
@@ -280,6 +280,27 @@ function addPost() {
       console.error(error);
     });
   });
+}
+
+function isAdminUser(user) {
+  const email = (user?.email || "").toLowerCase();
+  return ADMIN_EMAILS.some((e) => e.toLowerCase() === email);
+}
+
+async function showAdminImportIfAllowed(user) {
+  const section = document.getElementById('bulkClubImport');
+  if (!section || !user) return;
+  section.style.display = 'none';
+  let allowed = isAdminUser(user);
+  if (!allowed && user.getIdTokenResult) {
+    try {
+      const token = await user.getIdTokenResult();
+      allowed = !!token.claims?.admin;
+    } catch (err) {
+      console.warn('Admin claim check failed', err);
+    }
+  }
+  if (allowed) section.style.display = 'block';
 }
 
 function renderAttachment(attachment) {
@@ -618,12 +639,9 @@ function loadEvents() {
       snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
       if (items.length === 0) {
         renderEvents([
-          { title: "MITAFEST", when: "TBA", where: "Campus" },
-          { title: "Homefest", when: "TBA", where: "Campus" },
-          { title: "Prayatna", when: "TBA", where: "Campus" },
-          { title: "Tech Talk: AI Trends", when: "Friday, 4 PM", where: "Seminar Hall" },
-          { title: "Hackathon Prep Meetup", when: "Saturday, 11 AM", where: "Lab 2" },
-          { title: "Robotics Club Demo", when: "Tuesday, 1 PM", where: "Makerspace" },
+          { title: "MITAFEST", when: "TBA", where: "MIT Campus" },
+          { title: "Homefest", when: "TBA", where: "MIT Campus" },
+          { title: "Prayatna", when: "TBA", where: "MIT Campus" },
         ]);
       } else {
         renderEvents(items.map(e => ({ title: e.title, when: e.when || e.dateText || "", where: e.location || "" })));
@@ -634,9 +652,6 @@ function loadEvents() {
         { title: "MITAFEST", when: "TBA", where: "Campus" },
         { title: "Homefest", when: "TBA", where: "Campus" },
         { title: "Prayatna", when: "TBA", where: "Campus" },
-        { title: "Tech Talk: AI Trends", when: "Friday, 4 PM", where: "Seminar Hall" },
-        { title: "Hackathon Prep Meetup", when: "Saturday, 11 AM", where: "Lab 2" },
-        { title: "Robotics Club Demo", when: "Tuesday, 1 PM", where: "Makerspace" },
       ]);
     });
 }
