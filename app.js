@@ -73,8 +73,6 @@ if (window.location.pathname.includes('dashboard.html')) {
         setAvatarSafe(user, 'avatarImgDash', 'avatarInitialDash');
         initializeAI();
         loadPosts();
-        // Show similar people recommendations
-        renderSimilarPeopleSection(user);
       });
     }
   });
@@ -291,8 +289,26 @@ function displayUserInfo(user) {
 function clearAttachmentInputs() {
   const linkInput = document.getElementById("attachmentLink");
   const fileInput = document.getElementById("attachmentFile");
+  const fileLabel = document.getElementById("fileUploadLabel");
   if (linkInput) linkInput.value = "";
   if (fileInput) fileInput.value = "";
+  if (fileLabel) fileLabel.innerHTML = "📎 Upload a file (max 5 MB)";
+}
+
+function handleFileSelect(input) {
+  const fileLabel = document.getElementById("fileUploadLabel");
+  if (!fileLabel) return;
+  
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0];
+    const fileName = file.name.length > 30 ? file.name.substring(0, 27) + "..." : file.name;
+    const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+    fileLabel.innerHTML = `✅ ${fileName} (${fileSize} MB)`;
+    fileLabel.style.color = "#2e7d32";
+  } else {
+    fileLabel.innerHTML = "📎 Upload a file (max 5 MB)";
+    fileLabel.style.color = "";
+  }
 }
 
 async function uploadAttachment(file) {

@@ -91,8 +91,8 @@
             <div class="attachment-row">
                 <input type="url" id="attachmentLink" placeholder="Optional: attach a link (docs, decks, repos...)" aria-label="Attachment link" />
                 <label class="file-upload">
-                    <input type="file" id="attachmentFile" aria-label="Upload file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.txt,.zip" />
-                    <span>📎 Upload a file (max 5 MB)</span>
+                    <input type="file" id="attachmentFile" aria-label="Upload file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.txt,.zip" onchange="handleFileSelect(this)" />
+                    <span id="fileUploadLabel">📎 Upload a file (max 5 MB)</span>
                 </label>
                 <div class="attachment-hint">Attachments are shared with the community. Avoid sensitive data. If cloud storage is disabled, image files will be compressed and embedded; other file types should be shared as links.</div>
             </div>
