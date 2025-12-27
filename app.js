@@ -4,6 +4,36 @@ const storage = firebase.storage ? firebase.storage() : null;
 const commentUnsubscribers = {};
 const commentPaging = {};
 const ATTACHMENT_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
+// Optional Cloudinary config (set in page script):
+// window.CLOUDINARY_CLOUD_NAME = "your_cloud_name";
+// window.CLOUDINARY_UPLOAD_PRESET = "your_unsigned_preset";
+
+async function uploadViaCloudinary(file) {
+  const cloud = window.CLOUDINARY_CLOUD_NAME;
+  const preset = window.CLOUDINARY_UPLOAD_PRESET;
+  if (!cloud || !preset) {
+    throw new Error("Cloudinary not configured");
+  }
+  const endpoint = `https://api.cloudinary.com/v1_1/${cloud}/auto/upload`;
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", preset);
+  const resp = await fetch(endpoint, { method: "POST", body: fd });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`Cloudinary upload failed: ${txt}`);
+  }
+  const data = await resp.json();
+  const url = data.secure_url || data.url;
+  const resourceType = data.resource_type || (file.type && file.type.startsWith("image") ? "image" : "raw");
+  return {
+    url,
+    name: file.name,
+    size: file.size,
+    type: resourceType,
+    attachmentType: resourceType === "image" ? "image-url" : "file"
+  };
+}
 const COMMENTS_PAGE_SIZE = 15;
 let currentThreadPostId = null;
 let replyContext = { parentId: null, parentAuthor: null };
@@ -427,31 +457,31 @@ function addPost() {
       document.getElementById("postText").value = "";
       clearAttachmentInputs();
       const aiOutput = document.getElementById("aiOutput");
-      if (aiOutput) {
-        aiOutput.style.display = "none";
+      if (!storage) {
+        // Try Cloudinary first for any file type
+        try {
+          const result = await uploadViaCloudinary(file);
+          return result;
+        } catch (e) {
+          console.warn("Cloudinary not available or failed:", e?.message || e);
+          // fallback to embedded image if it's an image
+          if (file.type && file.type.startsWith('image/')) {
+            const base64 = await resizeImageToBase64(file, 1024, 0.8);
+            if (!base64) throw new Error('Could not process image');
+            if (base64.length > 600000) {
+              throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
+            }
+            return {
+              url: base64,
+              name: file.name,
+              size: base64.length,
+              type: 'image',
+              attachmentType: 'image-base64'
+            };
+          }
+          throw new Error("File uploads require storage or Cloudinary. Please attach a link instead.");
+        }
       }
-    };
-
-    processPost().catch((error) => {
-      alert("Error posting: " + error.message);
-      console.error(error);
-    });
-  });
-}
-
-// Delete a post
-async function deletePost(postId) {
-  if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-    return;
-  }
-
-  const user = auth.currentUser;
-  if (!user) {
-    alert("You must be logged in to delete posts.");
-    return;
-  }
-
-  try {
     const postRef = db.collection("posts").doc(postId);
     const postDoc = await postRef.get();
     
@@ -1777,32 +1807,32 @@ const GEMINI_PROXY_URL = "/api/gemini";
 
 function generateSmartFallback(prompt, mode) {
   // Fallback when API fails
-  switch (mode) {
-    case "summary":
-      const sentences = prompt.match(/[^.!?]+[.!?]+/g) || [prompt];
-      const keyPoints = sentences.slice(0, Math.max(1, Math.ceil(sentences.length / 3)));
-      return keyPoints.join(' ').trim() || "Key topic: " + prompt.substring(0, 50) + "...";
-    
-    case "suggestions":
-      return `1. **Add Specific Details** - Include concrete examples to strengthen your point.\n\n2. **Encourage Engagement** - Ask a question to spark discussion.\n\n3. **Improve Clarity** - Use clear sections to make your idea easy to follow.`;
-    
-    case "outline":
-      const words = prompt.split(' ');
-      const mainIdea = words.slice(0, Math.min(6, words.length)).join(' ');
-      return `- Main Topic: ${mainIdea}\n  - Supporting Point 1: Key details\n  - Supporting Point 2: Additional context\n  - Conclusion: Call to action`;
-    
-    case "search":
-      return `Based on your query, here are helpful insights:\n\n1. **Relevance** - Find community members interested in this topic.\n\n2. **Resources** - Check library and online resources related to this.\n\n3. **Events** - Look for upcoming events and discussions about this subject.`;
-    
-    default:
-      return prompt;
+  } catch (err) {
+    console.warn('Storage upload failed, trying Cloudinary:', err);
+    // Try Cloudinary as a secondary path
+    try {
+      const result = await uploadViaCloudinary(file);
+      return result;
+    } catch (e) {
+      console.warn("Cloudinary upload also failed:", e?.message || e);
+      if (file.type && file.type.startsWith('image/')) {
+        const base64 = await resizeImageToBase64(file, 1024, 0.8);
+        if (!base64) throw new Error('Could not process image');
+        if (base64.length > 600000) {
+          throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
+        }
+        return {
+          url: base64,
+          name: file.name,
+          size: base64.length,
+          type: 'image',
+          attachmentType: 'image-base64'
+        };
+      }
+      // Non-image: bubble up error so UI advises attaching a link
+      throw err;
+    }
   }
-}
-
-async function moderateContent(text) {
-  try {
-    const response = await fetch("/api/gemini", {
-      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text: `Is this text appropriate for a college community platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`,
