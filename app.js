@@ -307,9 +307,9 @@ async function uploadAttachment(file) {
       console.warn('Cloudinary upload failed, falling back to base64 if image:', cloudErr);
     }
     if (file.type && file.type.startsWith('image/')) {
-      const base64 = await resizeImageToBase64(file, 1024, 0.8);
+      const base64 = await resizeImageToBase64(file, 720, 0.75);
       if (!base64) throw new Error('Could not process image');
-      if (base64.length > 600000) {
+      if (base64.length > 500000) {
         throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
       }
       return {
@@ -356,9 +356,9 @@ async function uploadAttachment(file) {
       console.warn('Cloudinary upload also failed:', cloudErr);
     }
     if (file.type && file.type.startsWith('image/')) {
-      const base64 = await resizeImageToBase64(file, 1024, 0.8);
+      const base64 = await resizeImageToBase64(file, 720, 0.75);
       if (!base64) throw new Error('Could not process image');
-      if (base64.length > 600000) {
+      if (base64.length > 500000) {
         throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
       }
       return {
@@ -375,7 +375,7 @@ async function uploadAttachment(file) {
 }
 
 // Promise-based image resize to base64 (JPEG)
-function resizeImageToBase64(file, size = 1024, quality = 0.8) {
+function resizeImageToBase64(file, size = 720, quality = 0.75) {
   return new Promise((resolve, reject) => {
     try {
       const reader = new FileReader();
@@ -484,7 +484,7 @@ function renderAttachment(attachment) {
   if (attachment.attachmentType === 'image-base64') {
     return `
       <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
-        <img src="${attachment.url}" alt="Image attachment" style="max-width:200px; max-height:120px; border-radius:6px;" />
+        <img src="${attachment.url}" alt="Image attachment" loading="lazy" style="max-width:200px; max-height:120px; border-radius:6px;" />
         <div>
           <div style="font-weight:600; color:#667eea;">📎 ${escapeHtml(label)}${sizeLabel}</div>
           <div style="font-size:0.85em; color:#666;">Embedded image</div>
@@ -497,7 +497,7 @@ function renderAttachment(attachment) {
   if (isImageUrl) {
     return `
       <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
-        <img src="${attachment.url}" alt="Image attachment" style="max-width:200px; max-height:120px; border-radius:6px;" />
+        <img src="${attachment.url}" alt="Image attachment" loading="lazy" style="max-width:200px; max-height:120px; border-radius:6px;" />
         <div>
           <div style="font-weight:600; color:#667eea;">📎 ${escapeHtml(label)}${sizeLabel}</div>
           <div style="font-size:0.85em; color:#666;">Image file</div>
@@ -527,6 +527,7 @@ function loadPosts() {
 
   db.collection("posts")
     .orderBy("timestamp", "desc")
+    .limit(25)
     .onSnapshot((snapshot) => {
       const postsDiv = document.getElementById("posts");
       postsDiv.innerHTML = "";
@@ -591,6 +592,61 @@ function loadPosts() {
       console.error("Error loading posts: ", error);
       document.getElementById("posts").innerHTML = '<div class="no-posts">Error loading posts. Please refresh.</div>';
     });
+}
+
+// Delete a post (and its first batch of comments) owned by the current user
+async function deletePost(postId) {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to delete a post.");
+      return;
+    }
+    if (!postId) return;
+
+    const confirmed = window.confirm("Delete this post? This cannot be undone.");
+    if (!confirmed) return;
+
+    const postRef = db.collection("posts").doc(postId);
+    const doc = await postRef.get();
+    if (!doc.exists) {
+      alert("Post not found.");
+      return;
+    }
+    const data = doc.data();
+    if (data.authorId && data.authorId !== user.uid) {
+      alert("You can only delete your own posts.");
+      return;
+    }
+
+    // Attempt to delete attachment from Firebase Storage if present
+    try {
+      if (data.attachment && data.attachment.storagePath && typeof storage !== 'undefined' && storage) {
+        await storage.ref().child(data.attachment.storagePath).delete();
+      }
+    } catch (e) {
+      console.warn("Failed to delete storage file (continuing):", e);
+    }
+
+    // Delete up to 200 comments in a batch (client-side limitation)
+    try {
+      const commentsSnap = await postRef.collection("comments").limit(200).get();
+      if (!commentsSnap.empty) {
+        const batch = db.batch();
+        commentsSnap.forEach((c) => batch.delete(c.ref));
+        await batch.commit();
+      }
+    } catch (e) {
+      console.warn("Failed to delete comments batch (continuing):", e);
+    }
+
+    // Finally delete the post document
+    await postRef.delete();
+    alert("Post deleted.");
+  } catch (err) {
+    console.error("Delete post failed", err);
+    alert("Could not delete post. Please try again.");
+  }
 }
 
 function subscribeToComments(postId, containerId, allowReply = false) {
@@ -1798,24 +1854,41 @@ async function moderateContent(text) {
 async function callGeminiAPI(prompt, mode) {
   try {
     console.log(`Calling Gemini AI for: ${mode}`);
-    
-    // Call Vercel API function
-    const proxyResp = await fetch(GEMINI_PROXY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: prompt, mode })
-    });
+    const maxRetries = 2;
+    let attempt = 0;
+    let lastStatus = 0;
 
-    if (proxyResp.ok) {
-      const proxyData = await proxyResp.json();
-      const text = proxyData.result || proxyData.text || "";
-      if (text) {
-        console.log("Gemini API result:", text);
-        return text;
+    while (attempt <= maxRetries) {
+      const proxyResp = await fetch(GEMINI_PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: prompt, mode })
+      });
+
+      lastStatus = proxyResp.status;
+
+      if (proxyResp.ok) {
+        const proxyData = await proxyResp.json();
+        const text = proxyData.result || proxyData.text || "";
+        if (text) {
+          console.log("Gemini API result:", text);
+          return text;
+        }
       }
+
+      // If rate limited or temporarily unavailable, back off and retry
+      if (lastStatus === 429 || lastStatus === 503) {
+        const delayMs = 600 * Math.pow(2, attempt); // 600ms, 1200ms, ...
+        await new Promise(res => setTimeout(res, delayMs));
+        attempt++;
+        continue;
+      }
+
+      // Other errors: break and use fallback
+      break;
     }
 
-    console.warn(`API returned ${proxyResp.status}, using smart fallback...`);
+    console.warn(`API returned ${lastStatus}, using smart fallback...`);
     return generateSmartFallback(prompt, mode);
   } catch (error) {
     console.error("Gemini API error:", error);
