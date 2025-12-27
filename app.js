@@ -1285,7 +1285,12 @@ function saveProfileData(user, name, department, year, registrationNumber, photo
       
       // Update avatar immediately with the new photo
       if (photoURL) {
-        const userWithPhoto = { ...user, photoURL: photoURL };
+        const userWithPhoto = { 
+          ...user, 
+          photoURL: photoURL,
+          _avatarImgId: 'avatarImgProf',
+          _avatarInitialId: 'avatarInitialProf'
+        };
         setProfileAvatar(userWithPhoto);
       }
       
