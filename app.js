@@ -297,18 +297,36 @@ async function uploadAttachment(file) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `attachments/${user.uid}/${Date.now()}_${safeName}`;
   const ref = storage.ref().child(path);
-
-  const snapshot = await ref.put(file);
-  const url = await snapshot.ref.getDownloadURL();
-
-  return {
-    url,
-    name: file.name,
-    size: file.size,
-    type: file.type || "file",
-    storagePath: path,
-    attachmentType: "file"
-  };
+  try {
+    const snapshot = await ref.put(file);
+    const url = await snapshot.ref.getDownloadURL();
+    return {
+      url,
+      name: file.name,
+      size: file.size,
+      type: file.type || "file",
+      storagePath: path,
+      attachmentType: "file"
+    };
+  } catch (err) {
+    console.warn('Storage upload failed, falling back to base64 if image:', err);
+    if (file.type && file.type.startsWith('image/')) {
+      const base64 = await resizeImageToBase64(file, 1024, 0.8);
+      if (!base64) throw new Error('Could not process image');
+      if (base64.length > 600000) {
+        throw new Error('Image too large after compression. Please use a smaller image or attach a link.');
+      }
+      return {
+        url: base64,
+        name: file.name,
+        size: base64.length,
+        type: 'image',
+        attachmentType: 'image-base64'
+      };
+    }
+    // Non-image: bubble up error so UI advises attaching a link
+    throw err;
+  }
 }
 
 // Promise-based image resize to base64 (JPEG)
