@@ -1039,6 +1039,12 @@ function loadProfileDetails(user) {
       const followingCountEl = document.getElementById("followingCount");
       if (followerCountEl) followerCountEl.textContent = String(data.followerCount || 0);
       if (followingCountEl) followingCountEl.textContent = String(data.followingCount || 0);
+      
+      // Update avatar with saved photo from Firestore
+      if (data.photoURL) {
+        const userWithPhoto = { ...user, photoURL: data.photoURL };
+        setProfileAvatar(userWithPhoto);
+      }
     })
     .catch((err) => {
       console.error("Error loading profile details", err);
