@@ -92,6 +92,8 @@ if (window.location.pathname.includes('clubs.html')) {
     } else {
       setAvatarSafe(user, 'avatarImgCl', 'avatarInitialCl');
       loadClubs();
+      const importSection = document.getElementById('bulkClubImport');
+      if (importSection) importSection.style.display = 'block';
     }
   });
 }
@@ -616,6 +618,9 @@ function loadEvents() {
       snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
       if (items.length === 0) {
         renderEvents([
+          { title: "MITAFEST", when: "TBA", where: "Campus" },
+          { title: "Homefest", when: "TBA", where: "Campus" },
+          { title: "Prayatna", when: "TBA", where: "Campus" },
           { title: "Tech Talk: AI Trends", when: "Friday, 4 PM", where: "Seminar Hall" },
           { title: "Hackathon Prep Meetup", when: "Saturday, 11 AM", where: "Lab 2" },
           { title: "Robotics Club Demo", when: "Tuesday, 1 PM", where: "Makerspace" },
@@ -626,6 +631,9 @@ function loadEvents() {
     })
     .catch(() => {
       renderEvents([
+        { title: "MITAFEST", when: "TBA", where: "Campus" },
+        { title: "Homefest", when: "TBA", where: "Campus" },
+        { title: "Prayatna", when: "TBA", where: "Campus" },
         { title: "Tech Talk: AI Trends", when: "Friday, 4 PM", where: "Seminar Hall" },
         { title: "Hackathon Prep Meetup", when: "Saturday, 11 AM", where: "Lab 2" },
         { title: "Robotics Club Demo", when: "Tuesday, 1 PM", where: "Makerspace" },
@@ -647,26 +655,35 @@ function renderEvents(list) {
 function loadClubs() {
   const target = document.getElementById("clubsList");
   if (!target) return;
+  const defaultClubs = [
+    { id: "hostel", name: "Hostel", desc: "Residential community and activities.", icon: "🛏️" },
+    { id: "nss", name: "NSS", desc: "National Service Scheme.", icon: "🙌" },
+    { id: "nso", name: "NSO", desc: "National Sports Organization.", icon: "🏀" },
+    { id: "yrc", name: "YRC", desc: "Youth Red Cross.", icon: "🩹" },
+    { id: "athenaeum", name: "Athenaeum", desc: "Literary and library society.", icon: "📚" },
+    { id: "pda", name: "PDA", desc: "Personality development association.", icon: "🧠" },
+    { id: "tamil-mandram", name: "Tamil Mandram", desc: "Tamil culture and literature.", icon: "🎭" },
+    { id: "rotaract-club", name: "Rotaract Club", desc: "Community service and leadership.", icon: "🙂" },
+    { id: "computer-society", name: "Computer Society", desc: "Tech talks and projects.", icon: "💻" },
+    { id: "tbo", name: "TBO", desc: "Events and coordination.", icon: "🎟️" },
+    { id: "mit-quill", name: "MIT Quill", desc: "Writing and editorial club.", icon: "🪶" },
+    { id: "variety-team", name: "Variety Team", desc: "Cultural and performances team.", icon: "🎭" },
+    { id: "museum", name: "Museum", desc: "Heritage and archives.", icon: "🏛️" },
+    { id: "mitra", name: "MITRA", desc: "Robotics and innovation.", icon: "🤖" },
+    { id: "tedc", name: "TEDC", desc: "Entrepreneurship and development.", icon: "💡" }
+  ];
   db.collection("clubs").orderBy("name", "asc").limit(50).get()
     .then((snap) => {
       const items = [];
       snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
       if (items.length === 0) {
-        renderClubs([
-          { id: "dsc", name: "Developer Student Club", desc: "Build and learn together." },
-          { id: "ecell", name: "Entrepreneurship Cell", desc: "Startups, pitches, networking." },
-          { id: "cultural", name: "Cultural Committee", desc: "Events, festivals, performances." },
-        ]);
+        renderClubs(defaultClubs);
       } else {
-        renderClubs(items.map(c => ({ id: c.id, name: c.name, desc: c.description || "" })));
+        renderClubs(items.map(c => ({ id: c.id, name: c.name, desc: c.description || "", icon: c.icon || "🔰" })));
       }
     })
     .catch(() => {
-      renderClubs([
-        { id: "dsc", name: "Developer Student Club", desc: "Build and learn together." },
-        { id: "ecell", name: "Entrepreneurship Cell", desc: "Startups, pitches, networking." },
-        { id: "cultural", name: "Cultural Committee", desc: "Events, festivals, performances." },
-      ]);
+      renderClubs(defaultClubs);
     });
 }
 
@@ -676,7 +693,8 @@ function renderClubs(list) {
   list.forEach((c) => {
     const el = document.createElement("div");
     el.className = "card";
-    el.innerHTML = `<h4>${escapeHtml(c.name)}</h4><p>${escapeHtml(c.desc)}</p>`;
+    const icon = c.icon || "🔰";
+    el.innerHTML = `<div class="club-icon">${icon}</div><h4>${escapeHtml(c.name)}</h4><p>${escapeHtml(c.desc)}</p>`;
     const btn = document.createElement("button");
     btn.textContent = "Join";
     btn.style.marginTop = "8px";
@@ -684,6 +702,80 @@ function renderClubs(list) {
     el.appendChild(btn);
     target.appendChild(el);
   });
+}
+
+async function bulkAddClubs() {
+  const ta = document.getElementById('clubImportText');
+  const status = document.getElementById('clubImportStatus');
+  const user = auth.currentUser;
+  if (!ta || !user) return;
+  const lines = ta.value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) {
+    if (status) status.textContent = 'Nothing to add.';
+    return;
+  }
+  try {
+    let added = 0;
+    for (const line of lines) {
+      const [name, desc] = line.split(/\s*-\s*/, 2);
+      await db.collection('clubs').add({
+        name: name || line,
+        description: desc || '',
+        createdBy: user.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        tags: []
+      });
+      added++;
+    }
+    if (status) status.textContent = `Added ${added} club(s).`;
+    ta.value = '';
+    loadClubs();
+  } catch (e) {
+    console.error('Bulk add clubs failed', e);
+    if (status) status.textContent = 'Failed to add clubs.';
+  }
+}
+
+async function seedDefaultClubs() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const status = document.getElementById('clubImportStatus');
+  const defaults = [
+    { name: "Hostel", description: "Residential community and activities.", icon: "🛏️" },
+    { name: "NSS", description: "National Service Scheme.", icon: "🙌" },
+    { name: "NSO", description: "National Sports Organization.", icon: "🏀" },
+    { name: "YRC", description: "Youth Red Cross.", icon: "🩹" },
+    { name: "Athenaeum", description: "Literary and library society.", icon: "📚" },
+    { name: "PDA", description: "Personality development association.", icon: "🧠" },
+    { name: "Tamil Mandram", description: "Tamil culture and literature.", icon: "🎭" },
+    { name: "Rotaract Club", description: "Community service and leadership.", icon: "🙂" },
+    { name: "Computer Society", description: "Tech talks and projects.", icon: "💻" },
+    { name: "TBO", description: "Events and coordination.", icon: "🎟️" },
+    { name: "MIT Quill", description: "Writing and editorial club.", icon: "🪶" },
+    { name: "Variety Team", description: "Cultural and performances team.", icon: "🎭" },
+    { name: "Museum", description: "Heritage and archives.", icon: "🏛️" },
+    { name: "MITRA", description: "Robotics and innovation.", icon: "🤖" },
+    { name: "TEDC", description: "Entrepreneurship and development.", icon: "💡" }
+  ];
+  try {
+    let added = 0;
+    for (const c of defaults) {
+      await db.collection('clubs').add({
+        name: c.name,
+        description: c.description,
+        icon: c.icon,
+        createdBy: user.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        tags: []
+      });
+      added++;
+    }
+    if (status) status.textContent = `Seeded ${added} default clubs.`;
+    loadClubs();
+  } catch (e) {
+    console.error('Seeding default clubs failed', e);
+    if (status) status.textContent = 'Failed to seed default clubs.';
+  }
 }
 
 function joinClub(clubId, clubName) {

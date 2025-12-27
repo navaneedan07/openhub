@@ -71,9 +71,20 @@
         </div>
       </div>
 
-    <section>
+      <section>
       <div class="card-grid" id="clubsList"></div>
     </section>
+
+      <section id="bulkClubImport" style="display:none;">
+        <h3 style="color:#667eea; margin-bottom:10px;">Admin: Bulk Add Clubs</h3>
+        <p style="color:#666; font-size:0.95em; margin-bottom:8px;">Paste one per line. Format: <strong>Name - Description</strong></p>
+        <textarea id="clubImportText" style="width:100%; min-height:120px; border:1px solid #ddd; border-radius:8px; padding:10px; font-family:inherit;" placeholder="Robotics Club - Builds and demos robots\nCoding Club - Competitive programming practice\nMusic Club - Bands and performances"></textarea>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button class="ghost-btn" onclick="bulkAddClubs()">➕ Add Clubs</button>
+          <button class="ghost-btn" onclick="seedDefaultClubs()">📦 Add Listed Clubs</button>
+          <div id="clubImportStatus" style="align-self:center; color:#4a5bdc;"></div>
+        </div>
+      </section>
     </div>
   </div>
 

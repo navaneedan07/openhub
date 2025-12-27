@@ -652,16 +652,29 @@ button:active {
   border-radius: 10px;
   padding: 14px;
   box-shadow: 0 8px 22px rgba(102, 126, 234, 0.10);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.club-icon {
+  font-size: 2.2em;
+  line-height: 1;
+  margin-bottom: 8px;
 }
 
 .card h4 {
   color: var(--primary);
   margin-bottom: 6px;
+  text-align: center;
 }
 
 .card p {
   color: #666;
   font-size: 0.95em;
+  text-align: center;
 }
 
 /* Quick link list on home page */
