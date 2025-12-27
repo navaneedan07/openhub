@@ -1184,6 +1184,9 @@ function loadProfileDetails(user) {
         };
         setProfileAvatar(userWithPhoto);
       }
+
+      // Demo: show similar people based on interests
+      renderSimilarPeopleSection(user);
     })
     .catch((err) => {
       console.error("Error loading profile details", err);
@@ -1219,6 +1222,174 @@ function getSuffix(year) {
   if (y === 2) return 'nd';
   if (y === 3) return 'rd';
   return 'th';
+}
+
+// ===== Similar People (Interests Demo) =====
+function jaccardSimilarity(a, b) {
+  if (!a || !b || a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const v of a) if (b.has(v)) inter++;
+  const union = a.size + b.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+async function getUserInterests(userId) {
+  const tags = new Set();
+  const clubs = new Set();
+
+  try {
+    const postsSnap = await db.collection("posts")
+      .where("authorId", "==", userId)
+      .orderBy("timestamp", "desc")
+      .limit(50)
+      .get();
+    postsSnap.forEach(d => {
+      const data = d.data();
+      (data.tags || []).forEach(t => {
+        const norm = String(t || '').toLowerCase().trim();
+        if (norm) tags.add(norm);
+      });
+    });
+  } catch (e) {
+    console.error("Interests (posts) load failed", e);
+  }
+
+  try {
+    const clubsSnap = await db.collection("club_members")
+      .where("userId", "==", userId)
+      .limit(50)
+      .get();
+    clubsSnap.forEach(d => {
+      const data = d.data();
+      const id = String(data.clubId || '').toLowerCase();
+      if (id) clubs.add(id);
+    });
+  } catch (e) {
+    console.error("Interests (clubs) load failed", e);
+  }
+
+  return { tags, clubs };
+}
+
+async function findSimilarUsersFor(userId) {
+  // Build candidate pool from recent posts and club memberships
+  const candidates = new Set();
+
+  try {
+    const recentPosts = await db.collection("posts")
+      .orderBy("timestamp", "desc")
+      .limit(120)
+      .get();
+    recentPosts.forEach(d => {
+      const uid = d.data().authorId;
+      if (uid && uid !== userId) candidates.add(uid);
+    });
+  } catch (e) {
+    console.error("Candidate build (posts) failed", e);
+  }
+
+  try {
+    const members = await db.collection("club_members")
+      .limit(200)
+      .get();
+    members.forEach(d => {
+      const uid = d.data().userId;
+      if (uid && uid !== userId) candidates.add(uid);
+    });
+  } catch (e) {
+    console.error("Candidate build (clubs) failed", e);
+  }
+
+  const mine = await getUserInterests(userId);
+  const weights = { tags: 0.7, clubs: 0.3 };
+
+  const scored = [];
+  // Compute similarity; cap to 60 candidates for demo perf
+  const limited = Array.from(candidates).slice(0, 60);
+  for (const otherId of limited) {
+    const other = await getUserInterests(otherId);
+    const tagSim = jaccardSimilarity(mine.tags, other.tags);
+    const clubSim = jaccardSimilarity(mine.clubs, other.clubs);
+    const score = weights.tags * tagSim + weights.clubs * clubSim;
+    if (score > 0) scored.push({ userId: otherId, score, tagSim, clubSim });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // Enrich with display names (best effort)
+  const top = scored.slice(0, 5);
+  const enriched = [];
+  for (const s of top) {
+    let name = "User";
+    let photoURL = null;
+    try {
+      const prof = await db.collection("profiles").doc(s.userId).get();
+      if (prof.exists) {
+        const data = prof.data();
+        name = data.name || name;
+        photoURL = data.photoURL || null;
+      } else {
+        // Fallback via last post
+        const p = await db.collection("posts").where("authorId", "==", s.userId).limit(1).get();
+        if (!p.empty) {
+          const d = p.docs[0].data();
+          name = d.authorName || name;
+        }
+      }
+    } catch {}
+    enriched.push({ ...s, name, photoURL });
+  }
+
+  return enriched;
+}
+
+async function renderSimilarPeopleSection(currentUser) {
+  try {
+    const suggestions = await findSimilarUsersFor(currentUser.uid);
+    const container = document.getElementById("contentOverview") || document.getElementById("profileDisplayCard") || document.body;
+
+    // Create or reuse section
+    let section = document.getElementById("similarPeopleSection");
+    if (!section) {
+      section = document.createElement("div");
+      section.id = "similarPeopleSection";
+      section.style.marginTop = "16px";
+      container.appendChild(section);
+    }
+
+    if (!suggestions.length) {
+      section.innerHTML = `
+        <div class="ai-output-header">👥 People With Similar Interests</div>
+        <div style="color:#666;">We couldn't find matches yet. Try adding tags to your posts or joining clubs.</div>
+      `;
+      return;
+    }
+
+    let html = `<div class="ai-output-header">👥 People With Similar Interests</div>`;
+    html += `<div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+    suggestions.forEach(s => {
+      const overlapPct = Math.round(s.score * 100);
+      html += `
+        <div class="card" style="min-width:220px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:36px; height:36px; border-radius:50%; background:#e4e7fb; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+              ${s.photoURL ? `<img src="${s.photoURL}" alt="${escapeHtml(s.name)}" style="width:36px; height:36px; object-fit:cover;" />` : `<span style="color:#667eea; font-weight:700;">${escapeHtml((s.name||'U').charAt(0).toUpperCase())}</span>`}
+            </div>
+            <div style="font-weight:600;">${escapeHtml(s.name)}</div>
+          </div>
+          <div style="font-size:12px; color:#667eea; margin-top:6px;">Match: ${overlapPct}% · Tags ${Math.round(s.tagSim*100)}% · Clubs ${Math.round(s.clubSim*100)}%</div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button class="ghost-btn" onclick="window.location.href='profile.html?userId=${s.userId}'">View Profile</button>
+            <button class="ghost-btn" onclick="followUser('${s.userId}')">Follow</button>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    section.innerHTML = html;
+  } catch (e) {
+    console.error("Render similar people failed", e);
+  }
 }
 
 // --- Followers / Following ---
