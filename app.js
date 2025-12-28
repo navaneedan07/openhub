@@ -2229,8 +2229,8 @@ async function searchWithAI(query) {
 
 async function performAISearch() {
   const searchBox = document.getElementById("aiSearchBox");
-  const query = searchBox.value.trim();
-
+  const query = searchBox.value.trim().toLowerCase();
+  
   if (!query) {
     alert("Please enter a search query!");
     return;
@@ -2241,24 +2241,91 @@ async function performAISearch() {
   resultsDiv.style.display = "block";
 
   try {
-    // Use Gemini to fetch semantic matches
-    const aiResults = await searchWithAI(query);
+    // Search posts, events, and clubs that match the query
+    const postsSnapshot = await db.collection("posts").limit(50).get();
+    const eventsSnapshot = await db.collection("events").limit(50).get();
+    const clubsSnapshot = await db.collection("clubs").limit(50).get();
 
-    if (!aiResults || aiResults.length === 0) {
-      resultsDiv.innerHTML = `<div class='ai-output-header'>😔 No AI hits for "${escapeHtml(query)}"</div>`;
+    let allResults = [];
+
+    // Check posts
+    postsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const text = data.text?.toLowerCase() || "";
+      const tags = (data.tags || []).map(t => t.toLowerCase());
+      
+      if (text.includes(query) || tags.some(t => t.includes(query))) {
+        allResults.push({
+          type: "📝 Post",
+          title: text.substring(0, 60) + "...",
+          author: data.authorName,
+          tags: data.tags || [],
+          relevance: text.includes(query) ? "High" : "Medium"
+        });
+      }
+    });
+
+    // Check events
+    eventsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const name = data.name?.toLowerCase() || "";
+      const description = data.description?.toLowerCase() || "";
+      const tags = (data.tags || []).map(t => t.toLowerCase());
+      
+      if (name.includes(query) || description.includes(query) || tags.some(t => t.includes(query))) {
+        allResults.push({
+          type: "📅 Event",
+          title: data.name,
+          author: data.organizer || "OpenHub",
+          tags: data.tags || [],
+          relevance: name.includes(query) ? "High" : "Medium"
+        });
+      }
+    });
+
+    // Check clubs
+    clubsSnapshot.forEach(doc => {
+      const data = doc.data();
+      const name = data.name?.toLowerCase() || "";
+      const description = data.description?.toLowerCase() || "";
+      const tags = (data.tags || []).map(t => t.toLowerCase());
+      
+      if (name.includes(query) || description.includes(query) || tags.some(t => t.includes(query))) {
+        allResults.push({
+          type: "🤝 Club",
+          title: data.name,
+          author: data.leader || "OpenHub",
+          tags: data.tags || [],
+          relevance: name.includes(query) ? "High" : "Medium"
+        });
+      }
+    });
+
+    if (allResults.length === 0) {
+      resultsDiv.innerHTML = `<div class='ai-output-header'>😔 No results found for "${query}"</div>
+        `;
       return;
     }
 
-    const trimmed = aiResults.slice(0, 10).map(item => escapeHtml(String(item)));
-    const list = trimmed.map(item => `<li style="margin-bottom:6px;">${item}</li>`).join("");
+    // Display results
+    let resultsHTML = `<div class='ai-output-header'>🎯 Found ${allResults.length} result${allResults.length !== 1 ? 's' : ''} for "${query}"</div>`;
+    
+    allResults.slice(0, 10).forEach(result => {
+      resultsHTML += `
+        <div style="padding: 12px; margin-bottom: 10px; background: #f8f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+          <div style="font-weight: 600; color: #667eea; margin-bottom: 5px;">${result.type}</div>
+          <div style="color: #333; margin-bottom: 5px; font-weight: 500;">${result.title}</div>
+          <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">By ${result.author}</div>
+          ${result.tags.length > 0 ? `<div style="font-size: 0.8em;">${result.tags.slice(0, 3).map(t => `<span style="display: inline-block; background: #e4e7fb; padding: 2px 6px; border-radius: 3px; margin-right: 5px; margin-bottom: 4px;">${t}</span>`).join('')}</div>` : ''}
+          <div style="font-size: 0.8em; color: #667eea; margin-top: 5px;">Relevance: ${result.relevance}</div>
+        </div>
+      `;
+    });
 
-    resultsDiv.innerHTML = `
-      <div class='ai-output-header'>🤖 AI results for "${escapeHtml(query)}"</div>
-      <ul style="padding-left:16px; margin-top:8px;">${list}</ul>
-    `;
+    resultsDiv.innerHTML = resultsHTML;
   } catch (error) {
-    console.error("AI search error:", error);
-    resultsDiv.innerHTML = "<p style='color:#d9534f;'>AI search failed. Please try again.</p>";
+    console.error("Search error:", error);
+    resultsDiv.innerHTML = "<p style='color: #d9534f;'>Search failed. Please try again.</p>";
   }
 }
 // Add this to app.js after getSuffix function
