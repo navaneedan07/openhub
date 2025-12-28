@@ -6,7 +6,7 @@ A lightweight campus community web app for sharing posts, events, clubs, resourc
 - Posts with optional attachments (link or upload with base64 fallback when storage is disabled).
 - Events, clubs, and resources listing pages.
 - Profiles with avatar upload/resize, follower/following counts, and interests-based similar people suggestions.
-- Manual search across posts, events, and clubs; optional AI-powered search/summarize/suggest/outline via Gemini models.
+- Manual search across posts; optional AI-powered search/summarize/suggest/outline via Gemini models.
 - Auth + Firestore persistence (using Firebase compat SDK v9.23.0).
 
 ## Tech Stack
