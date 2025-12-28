@@ -2046,6 +2046,10 @@ const GEMINI_PROXY_URL = "/api/gemini";
 const GEMINI_MODEL_PREFERENCE = [
   "models/gemini-2.5-flash-lite", // higher RPM allowance
   "models/gemini-2.5-flash",
+  "models/gemini-3-flash",
+  "models/gemini-2.5-flash-tts",
+  "models/gemma-3-12b",
+  "models/gemma-3-1b",
   "models/gemini-2.0-flash-001"
 ];
 
