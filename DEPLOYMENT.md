@@ -128,7 +128,7 @@ resources.html       # Study materials
 3. Click "Settings" → "Environment Variables"
 4. Add new variable:
    - Name: `GEMINI_API_KEY`
-   - Value: `AIzaSyB-etwKJZkI2j6aMhVLJ_FfH9nxJJf-LO4`
+   - Value: `<your-gemini-api-key>` (set in Vercel env, do not commit to git)
 5. Click "Save"
 
 ### Step 2: Redeploy
