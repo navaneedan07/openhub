@@ -11,8 +11,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="firebase-config-loader.js"></script>
     <script>
-      firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(window.firebaseConfig || firebaseConfig);
             // Optional: set Cloudinary unsigned upload config here.
             // Create an unsigned upload preset in Cloudinary (Settings → Upload → Upload presets)
             // and set your cloud name below. This enables uploads without Firebase Storage.

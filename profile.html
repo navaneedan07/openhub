@@ -10,8 +10,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="firebase-config-loader.js"></script>
   <script>
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(window.firebaseConfig || firebaseConfig);
     // Avoid Storage calls; profile photos are base64 in Firestore.
     window.DISABLE_STORAGE_UPLOADS = true;
   </script>
