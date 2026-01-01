@@ -55,30 +55,84 @@ class AIDiscoverySystem {
     try {
       const userRef = db.collection("users").doc(userId);
       const userDoc = await userRef.get();
-      const userInterests = userDoc.data()?.interests || {};
+      const userData = userDoc.data();
+      const userInterests = userData?.interests || {};
+      
+      // Get user's profile tags (major, year, interests from profile)
+      const profileTags = [
+        userData?.major?.toLowerCase(),
+        userData?.year,
+        ...(userData?.profileInterests || [])
+      ].filter(Boolean);
+
+      // Get user's interaction history (posts they've liked, commented on, created)
+      const userPosts = await db.collection("posts")
+        .where("authorId", "==", userId)
+        .limit(10)
+        .get();
+      
+      const userActivityTags = new Set();
+      userPosts.forEach(doc => {
+        const tags = doc.data().tags || [];
+        tags.forEach(tag => userActivityTags.add(tag.toLowerCase()));
+        
+        // Extract keywords from user's own posts
+        const text = doc.data().text || "";
+        const keywords = text.toLowerCase().match(/\b(ai|ml|web|app|robotics|data|blockchain|cloud|mobile|design|ux|ui|backend|frontend|database|api|security|iot|vr|ar|game|startup|entrepreneurship|research|project|hackathon)\b/g) || [];
+        keywords.forEach(kw => userActivityTags.add(kw));
+      });
 
       // Fetch all content
-      const posts = await db.collection("posts").limit(100).get();
-      const events = await db.collection("events").limit(100).get();
-      const clubs = await db.collection("clubs").limit(100).get();
+      const posts = await db.collection("posts").orderBy("createdAt", "desc").limit(50).get();
+      const events = await db.collection("events").limit(20).get();
+      const clubs = await db.collection("clubs").limit(20).get();
 
       let allItems = [];
 
-      // Score posts based on user interests
+      // Score posts based on multiple factors
       posts.forEach(doc => {
+        if (doc.data().authorId === userId) return; // Don't recommend user's own posts
+        
         const data = doc.data();
-        const tags = data.tags || [];
+        const tags = (data.tags || []).map(t => t.toLowerCase());
+        const text = (data.text || "").toLowerCase();
+        
         let score = 0;
+        
+        // 1. Match with user interests (highest weight)
         tags.forEach(tag => {
-          score += userInterests[tag] || 0;
+          score += (userInterests[tag] || 0) * 3;
         });
+        
+        // 2. Match with profile tags
+        profileTags.forEach(profileTag => {
+          if (tags.includes(profileTag) || text.includes(profileTag)) {
+            score += 5;
+          }
+        });
+        
+        // 3. Match with user activity patterns
+        userActivityTags.forEach(activityTag => {
+          if (tags.includes(activityTag) || text.includes(activityTag)) {
+            score += 4;
+          }
+        });
+        
+        // 4. Engagement score (popular content bonus)
+        score += (data.likeCount || 0) * 0.5;
+        score += (data.commentCount || 0) * 1;
+        
+        // 5. Recency bonus (newer posts get slight boost)
+        const ageInDays = (Date.now() - data.createdAt.toMillis()) / (1000 * 60 * 60 * 24);
+        if (ageInDays < 7) score += 2;
+        
         if (score > 0 || tags.length === 0) {
           allItems.push({
             type: "post",
             id: doc.id,
-            title: data.title || data.text?.substring(0, 50),
-            score: score + Math.random(),
-            tags,
+            title: data.text?.substring(0, 60) + "...",
+            score: score + (Math.random() * 0.5), // Small random factor for variety
+            tags: tags.slice(0, 3),
             data
           });
         }
@@ -87,17 +141,36 @@ class AIDiscoverySystem {
       // Score events
       events.forEach(doc => {
         const data = doc.data();
-        const tags = data.tags || [];
+        const tags = (data.tags || []).map(t => t.toLowerCase());
+        const title = (data.title || "").toLowerCase();
+        
         let score = 0;
+        
         tags.forEach(tag => {
-          score += userInterests[tag] || 0;
+          score += (userInterests[tag] || 0) * 3;
         });
+        
+        profileTags.forEach(profileTag => {
+          if (tags.includes(profileTag) || title.includes(profileTag)) {
+            score += 5;
+          }
+        });
+        
+        userActivityTags.forEach(activityTag => {
+          if (tags.includes(activityTag) || title.includes(activityTag)) {
+            score += 4;
+          }
+        });
+        
+        // Events get a base score to ensure they appear
+        score += 3;
+        
         allItems.push({
           type: "event",
           id: doc.id,
           title: data.title,
-          score: score + Math.random(),
-          tags,
+          score: score + (Math.random() * 0.5),
+          tags: tags.slice(0, 3),
           data
         });
       });
@@ -105,22 +178,41 @@ class AIDiscoverySystem {
       // Score clubs
       clubs.forEach(doc => {
         const data = doc.data();
-        const tags = data.tags || [];
+        const tags = (data.tags || []).map(t => t.toLowerCase());
+        const name = (data.name || "").toLowerCase();
+        
         let score = 0;
+        
         tags.forEach(tag => {
-          score += userInterests[tag] || 0;
+          score += (userInterests[tag] || 0) * 3;
         });
+        
+        profileTags.forEach(profileTag => {
+          if (tags.includes(profileTag) || name.includes(profileTag)) {
+            score += 5;
+          }
+        });
+        
+        userActivityTags.forEach(activityTag => {
+          if (tags.includes(activityTag) || name.includes(activityTag)) {
+            score += 4;
+          }
+        });
+        
+        // Clubs get a base score
+        score += 2;
+        
         allItems.push({
           type: "club",
           id: doc.id,
           title: data.name,
-          score: score + Math.random(),
-          tags,
+          score: score + (Math.random() * 0.5),
+          tags: tags.slice(0, 3),
           data
         });
       });
 
-      // Sort by relevance score
+      // Sort by relevance score and return top items
       allItems.sort((a, b) => b.score - a.score);
       return allItems.slice(0, limit);
     } catch (error) {

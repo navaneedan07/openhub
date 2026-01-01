@@ -227,6 +227,25 @@
         'event': 'events.html',
         'club': 'clubs.html'
       };
+      
+      // Track that user clicked on this item (track interest)
+      const user = auth.currentUser;
+      if (user) {
+        db.collection(type === 'post' ? 'posts' : type === 'event' ? 'events' : 'clubs')
+          .doc(id)
+          .get()
+          .then(doc => {
+            if (doc.exists) {
+              const tags = doc.data().tags || [];
+              // Track each tag as an interest
+              tags.forEach(tag => {
+                aiDiscovery.trackUserInterest(user.uid, tag.toLowerCase(), 0.5);
+              });
+            }
+          })
+          .catch(err => console.error('Error tracking interest:', err));
+      }
+      
       window.location.href = pages[type] || 'home.html';
     }
 
