@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "functions": {
     "api/gemini.js": {
       "memory": 1024,
@@ -6,12 +7,12 @@
     }
   },
   "builds": [
-    { "src": "frontend/**/*", "use": "@vercel/static" },
-    { "src": "api/**/*.js", "use": "@vercel/node" }
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "frontend/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/", "dest": "/frontend/index.html" },
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/frontend/$1" }
   ]
 }
