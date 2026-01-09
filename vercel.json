@@ -6,12 +6,10 @@
       "maxDuration": 30
     }
   },
-  "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "frontend/**/*", "use": "@vercel/static" }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/frontend/$1" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/", "dest": "/frontend/index.html" },
+    { "src": "/(.*)", "dest": "/frontend/$1" }
   ]
 }
