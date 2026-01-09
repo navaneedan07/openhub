@@ -13,38 +13,52 @@ A lightweight campus community web app for sharing posts, events, clubs, resourc
 - Frontend: HTML/CSS/vanilla JS.
 - Backend/data: Firebase Auth + Firestore (compat SDK). Optional Firebase Storage uploads can be disabled via `window.DISABLE_STORAGE_UPLOADS`.
 - AI: Gemini proxy endpoint `/api/gemini` with model preferences (flash-lite, flash, 3-flash, flash-tts, gemma fallbacks).
-- Functions: `functions/` (TypeScript) for backend proxies (e.g., `gemini.js`).
-- Deployment targets present: Netlify (`netlify/functions/gemini.js`), Vercel (`vercel.json`), Firebase Hosting/Functions (`firebase.json`, `functions/`).
+- Functions: `backend/functions/` (TypeScript) for backend proxies (e.g., `gemini.js`).
+- Deployment targets present: Netlify (`backend/netlify/functions/gemini.js`), Vercel (`vercel.json`), Firebase Hosting/Functions (`firebase.json`, `backend/functions/`).
 
-## Project Structure (high level)
-- `index.html`, `home.html`, `dashboard.html`, `events.html`, `clubs.html`, `resources.html`, `profile.html`, `thread.html` — main pages.
-- `app.js` — core client logic (auth, CRUD, AI helpers, search, profile, follow, interests demo).
-- `style.css` — global styles.
-- `ai-discovery.js` — AI UX helpers.
-- `api/gemini.js` — serverless proxy for Gemini (for local/Vercel/Netlify-style routing).
-- `functions/` — Firebase Functions source (TypeScript) plus generated Data Connect admin bindings.
-- `netlify/functions/gemini.js` — Netlify Function proxy for Gemini.
-- Config: `firebase.json`, `firestore.rules`, `storage.rules`, `firestore.indexes.json`, `netlify.toml`, `vercel.json`.
+## Project Structure
+```
+openhub/
+├── frontend/              # All client-side files
+│   ├── *.html            # Main pages (index, home, dashboard, events, clubs, resources, profile, thread)
+│   ├── app.js            # Core client logic (auth, CRUD, AI helpers, search, profile, follow, interests)
+│   ├── style.css         # Global styles
+│   ├── ai-discovery.js   # AI UX helpers
+│   ├── firebase-config.js # Firebase configuration
+│   └── ...               # Other frontend JS files
+├── backend/              # All server-side code
+│   ├── api/              # API endpoints
+│   │   └── gemini.js     # Serverless proxy for Gemini
+│   ├── functions/        # Firebase Functions (TypeScript)
+│   ├── dataconnect/      # Firebase Data Connect configuration
+│   └── netlify/          # Netlify Functions
+│       └── functions/
+│           └── gemini.js # Netlify Function proxy for Gemini
+├── firebase.json         # Firebase configuration
+├── netlify.toml          # Netlify configuration
+├── vercel.json           # Vercel configuration
+└── ...                   # Other config files
+```
 
 ## Setup
 1) Prereqs: Node 18+, npm. Optional: Firebase CLI (`npm i -g firebase-tools`) for hosting/functions; Netlify CLI or Vercel CLI if you deploy there.
 2) Install deps for functions (if you plan to run the proxy via Firebase Functions):
-   - `cd functions`
+   - `cd backend/functions`
    - `npm install`
 3) Configure Firebase:
-   - Update the `firebaseConfig` block in `dashboard.html` (and other pages that initialize Firebase) with your project keys.
+   - Update the `firebaseConfig` block in the HTML pages (in `frontend/`) with your project keys.
    - Ensure Firestore and Auth are enabled in your Firebase project.
 4) Gemini proxy configuration:
-   - Set the Gemini API key in your serverless environment (e.g., `process.env.GEMINI_API_KEY`) for `api/gemini.js` or the corresponding Netlify/Vercel/Firebase Function.
+   - Set the Gemini API key in your serverless environment (e.g., `process.env.GEMINI_API_KEY`) for `backend/api/gemini.js` or the corresponding Netlify/Vercel/Firebase Function.
    - The client calls `/api/gemini`; ensure your chosen hosting maps that route to the proxy function.
 5) Storage uploads:
    - By default `window.DISABLE_STORAGE_UPLOADS = true` (embeds images base64; non-images should be links). Set to `false` to use Firebase Storage and configure CORS/billing accordingly.
 
 ## Local Development
 - Simple static serve (for front-end only):
-  - From repo root, use any static server (e.g., `npx serve .` or a VS Code live server extension). Ensure `/api/gemini` is proxied to your local function if testing AI.
+  - From repo root, use any static server (e.g., `npx serve frontend` or a VS Code live server extension pointing to the frontend directory). Ensure `/api/gemini` is proxied to your local function if testing AI.
 - Firebase Functions emulator (AI proxy via Firebase):
-  - `cd functions && npm run build` (or `npm run serve` if defined) then `firebase emulators:start --only functions,hosting` (ensure your `firebase.json` routes `/api/gemini` to the function).
+  - `cd backend/functions && npm run build` (or `npm run serve` if defined) then `firebase emulators:start --only functions,hosting` (ensure your `firebase.json` routes `/api/gemini` to the function).
 - Netlify dev (if using Netlify Functions):
   - `netlify dev` from repo root (requires Netlify CLI). This should expose the function at `/api/gemini`.
 

@@ -65,18 +65,24 @@ export const api = onRequest(async (req, res) => {
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 	res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-	if (req.method === "OPTIONS") return res.status(204).end();
+	if (req.method === "OPTIONS") {
+		res.status(204).end();
+		return;
+	}
 
-	if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+	if (req.method !== "POST") {
+		res.status(405).json({ error: "Method Not Allowed" });
+		return;
+	}
 
 	try {
 		const { text = "", mode = "summary" } = req.body || {};
 		// If you later set a real Gemini API key, you can replace this fallback
 		// call with an actual API request and return its response.
 		const result = generateFallback(String(text), String(mode));
-		return res.status(200).json({ result });
+		res.status(200).json({ result });
 	} catch (err) {
 		logger.error("API error", err as any);
-		return res.status(500).json({ error: "Internal Server Error" });
+		res.status(500).json({ error: "Internal Server Error" });
 	}
 });

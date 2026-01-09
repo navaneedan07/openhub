@@ -1,7 +1,7 @@
 [build]
   command = "echo 'Static site'"
-  publish = "."
-  functions = "netlify/functions"
+  publish = "frontend"
+  functions = "backend/netlify/functions"
 
 [[redirects]]
   from = "/*"
