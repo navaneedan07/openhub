@@ -1,6 +1,6 @@
 {
   "functions": {
-    "backend/api/gemini.js": {
+    "api/gemini.js": {
       "memory": 1024,
       "maxDuration": 30
     }
