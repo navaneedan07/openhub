@@ -123,6 +123,73 @@ body::before {
   white-space: nowrap;
 }
 
+/* Mobile-first sidebar behaviour */
+@media (max-width: 900px) {
+  .layout-wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 240px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 240px; /* keep full width when hidden */
+  }
+
+  .sidebar-header {
+    padding: 16px 20px 12px;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .sidebar-nav {
+    margin-top: 12px;
+  }
+
+  .sidebar-toggle {
+    position: fixed;
+    left: 16px;
+    top: 16px;
+    right: auto;
+    transform: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    z-index: 1200;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 20px 16px 28px;
+  }
+
+  .header-top {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .card-grid,
+  .dashboard-grid,
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 .sidebar.collapsed .nav-item {
   justify-content: center;
   padding: 14px 10px;

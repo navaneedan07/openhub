@@ -18,24 +18,31 @@ function toggleSidebar() {
   localStorage.setItem('sidebarCollapsed', isCollapsed);
 }
 
-// Initialize sidebar state from localStorage
+// Initialize sidebar state from localStorage and adapt for mobile
 function initializeSidebarState() {
   const sidebar = document.querySelector('.sidebar');
-  
-  // Check if user is logged in
+  if (!sidebar) return;
+
+  const isMobile = window.innerWidth <= 900;
+
+  if (isMobile) {
+    // On mobile, start collapsed (off-canvas) for better UX
+    sidebar.classList.add('collapsed');
+    localStorage.setItem('sidebarCollapsed', true);
+    return;
+  }
+
+  // Desktop behaviour
   const user = firebase.auth().currentUser;
-  
+
   if (user) {
     // User is logged in - always start with expanded sidebar
-    if (sidebar && sidebar.classList.contains('collapsed')) {
-      sidebar.classList.remove('collapsed');
-    }
-    // Don't restore from localStorage, always expand on login
+    sidebar.classList.remove('collapsed');
     localStorage.removeItem('sidebarCollapsed');
   } else {
     // User is not logged in - restore from localStorage if available
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-    if (isCollapsed && sidebar) {
+    if (isCollapsed) {
       sidebar.classList.add('collapsed');
     }
   }
