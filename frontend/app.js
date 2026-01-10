@@ -1097,41 +1097,145 @@ function joinClub(clubId, clubName) {
 }
 
 function loadResources() {
-  const target = document.getElementById("resourcesList");
-  if (!target) return;
-  db.collection("resources").orderBy("title", "asc").limit(50).get()
-    .then((snap) => {
-      const items = [];
-      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-      if (items.length === 0) {
-        renderResources([
-          { title: "Library Portal", url: "#" },
-          { title: "Lab Booking", url: "#" },
-          { title: "Placement Cell", url: "#" },
-          { title: "Exam Timetable", url: "#" },
-        ]);
-      } else {
-        renderResources(items.map(r => ({ title: r.title, url: r.url })));
+  const container = document.getElementById("resourcesContainer");
+  if (!container) return;
+
+  // Department structure with years and sample links
+  const departments = [
+    {
+      name: "B.E - Computer Science and Engineering",
+      years: {
+        1: "https://example.com/cse/year1",
+        2: "https://example.com/cse/year2",
+        3: "https://example.com/cse/year3",
+        4: "https://example.com/cse/year4"
       }
-    })
-    .catch(() => {
-      renderResources([
-        { title: "Library Portal", url: "#" },
-        { title: "Lab Booking", url: "#" },
-        { title: "Placement Cell", url: "#" },
-        { title: "Exam Timetable", url: "#" },
-      ]);
-    });
+    },
+    {
+      name: "B.Tech - Artificial Intelligence and Data Science",
+      years: {
+        1: "https://example.com/aids/year1",
+        2: "https://example.com/aids/year2",
+        3: "https://example.com/aids/year3",
+        4: "https://example.com/aids/year4"
+      }
+    },
+    {
+      name: "B.E - Electronics and Communication Engineering",
+      years: {
+        1: "https://example.com/ece/year1",
+        2: "https://example.com/ece/year2",
+        3: "https://example.com/ece/year3",
+        4: "https://example.com/ece/year4"
+      }
+    },
+    {
+      name: "B.Tech - Information Technology",
+      years: {
+        1: "https://example.com/it/year1",
+        2: "https://example.com/it/year2",
+        3: "https://example.com/it/year3",
+        4: "https://example.com/it/year4"
+      }
+    },
+    {
+      name: "B.E - Robotics and Automation",
+      years: {
+        1: "https://example.com/ra/year1",
+        2: "https://example.com/ra/year2",
+        3: "https://example.com/ra/year3",
+        4: "https://example.com/ra/year4"
+      }
+    },
+    {
+      name: "B.E - Aeronautical Engineering",
+      years: {
+        1: "https://example.com/ae/year1",
+        2: "https://example.com/ae/year2",
+        3: "https://example.com/ae/year3",
+        4: "https://example.com/ae/year4"
+      }
+    },
+    {
+      name: "B.E - Automobile Engineering",
+      years: {
+        1: "https://example.com/auto/year1",
+        2: "https://example.com/auto/year2",
+        3: "https://example.com/auto/year3",
+        4: "https://example.com/auto/year4"
+      }
+    },
+    {
+      name: "B.E - Electronics and Instrumentation Engineering",
+      years: {
+        1: "https://example.com/eie/year1",
+        2: "https://example.com/eie/year2",
+        3: "https://example.com/eie/year3",
+        4: "https://example.com/eie/year4"
+      }
+    },
+    {
+      name: "B.E - Production Engineering",
+      years: {
+        1: "https://example.com/pe/year1",
+        2: "https://example.com/pe/year2",
+        3: "https://example.com/pe/year3",
+        4: "https://example.com/pe/year4"
+      }
+    },
+    {
+      name: "B.Tech - Rubber and Plastics Technology",
+      years: {
+        1: "https://example.com/rpt/year1",
+        2: "https://example.com/rpt/year2",
+        3: "https://example.com/rpt/year3",
+        4: "https://example.com/rpt/year4"
+      }
+    }
+  ];
+
+  renderDepartments(departments);
 }
 
-function renderResources(list) {
-  const target = document.getElementById("resourcesList");
-  target.innerHTML = "";
-  list.forEach((r) => {
-    const li = document.createElement("li");
-    li.innerHTML = `<a href="${r.url}" target="_blank">${escapeHtml(r.title)}</a>`;
-    target.appendChild(li);
+function renderDepartments(departments) {
+  const container = document.getElementById("resourcesContainer");
+  container.innerHTML = "";
+  
+  const deptGrid = document.createElement("div");
+  deptGrid.className = "departments-grid";
+
+  departments.forEach((dept, idx) => {
+    const deptCard = document.createElement("div");
+    deptCard.className = "department-card";
+    
+    const deptName = document.createElement("h3");
+    deptName.className = "department-name";
+    deptName.textContent = dept.name;
+    
+    const yearsContainer = document.createElement("div");
+    yearsContainer.className = "years-container";
+    
+    [1, 2, 3, 4].forEach((year) => {
+      const yearBtn = document.createElement("button");
+      yearBtn.className = "year-button";
+      yearBtn.textContent = `Year ${year}`;
+      yearBtn.onclick = () => {
+        const url = dept.years[year];
+        if (url && url !== "#") {
+          window.open(url, "_blank");
+        } else {
+          alert("Link not configured for this year");
+        }
+      };
+      yearsContainer.appendChild(yearBtn);
+    });
+    
+    deptCard.appendChild(deptName);
+    deptCard.appendChild(yearsContainer);
+    deptGrid.appendChild(deptCard);
   });
+
+  container.appendChild(deptGrid);
 }
 
 function bindProfileForm(user) {
