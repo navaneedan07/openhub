@@ -1149,15 +1149,15 @@ function loadResources() {
       name: "B.E - Computer Science and Engineering",
       years: {
         1: {
-          odd: "https://example.com/cse/year1/odd",
-          even: "https://example.com/cse/year1/even"
+          odd: "https://drive.google.com/drive/folders/1-8tYoqY9qODiLYKpnnjAw_OcQNpih5Zh",
+          even: "https://drive.google.com/drive/folders/1-9p2FovhQi_jgvU8qd1UPsMowQkv1ONd"
         },
         2: {
-          odd: "https://example.com/cse/year2/odd",
-          even: "https://example.com/cse/year2/even"
+          odd: "https://drive.google.com/drive/folders/1rPlcqzDAOc4HijQdGa4ToUE0oWdSF-DR",
+          even: "https://drive.google.com/drive/folders/1t229dOoyOJbq9-EuZSm3U1cDyvRO7Z2u"
         },
         3: {
-          odd: "https://example.com/cse/year3/odd",
+          odd: "https://drive.google.com/drive/folders/1FSNgQTbI2LhBJftNbbIYsZ3HVd_TnBoE",
           even: "https://example.com/cse/year3/even"
         },
         4: {
