@@ -1350,6 +1350,12 @@ function renderDepartments(departments) {
     const deptContent = document.createElement("div");
     deptContent.className = "nested-content";
     deptContent.style.display = "none";
+    deptContent.style.marginLeft = "80px";
+    deptContent.style.borderLeft = "5px solid #667eea";
+    deptContent.style.paddingLeft = "20px";
+    deptContent.style.background = "rgba(102, 126, 234, 0.08)";
+    deptContent.style.paddingTop = "12px";
+    deptContent.style.paddingBottom = "12px";
     
     // Years
     [1, 2, 3, 4].forEach((year) => {
@@ -1374,6 +1380,12 @@ function renderDepartments(departments) {
       const yearContent = document.createElement("div");
       yearContent.className = "nested-content";
       yearContent.style.display = "none";
+      yearContent.style.marginLeft = "80px";
+      yearContent.style.borderLeft = "5px solid #06b6d4";
+      yearContent.style.paddingLeft = "20px";
+      yearContent.style.background = "rgba(6, 182, 212, 0.08)";
+      yearContent.style.paddingTop = "12px";
+      yearContent.style.paddingBottom = "12px";
       
       // Semesters
       [
