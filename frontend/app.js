@@ -8,6 +8,42 @@ const ATTACHMENT_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
 // window.CLOUDINARY_CLOUD_NAME = "your_cloud_name";
 // window.CLOUDINARY_UPLOAD_PRESET = "your_unsigned_preset";
 
+// Sidebar toggle function with localStorage persistence
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  sidebar.classList.toggle('collapsed');
+  
+  // Save state to localStorage
+  const isCollapsed = sidebar.classList.contains('collapsed');
+  localStorage.setItem('sidebarCollapsed', isCollapsed);
+}
+
+// Initialize sidebar state from localStorage
+function initializeSidebarState() {
+  const sidebar = document.querySelector('.sidebar');
+  
+  // Check if user is logged in
+  const user = firebase.auth().currentUser;
+  
+  if (user) {
+    // User is logged in - always start with expanded sidebar
+    if (sidebar && sidebar.classList.contains('collapsed')) {
+      sidebar.classList.remove('collapsed');
+    }
+    // Don't restore from localStorage, always expand on login
+    localStorage.removeItem('sidebarCollapsed');
+  } else {
+    // User is not logged in - restore from localStorage if available
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed && sidebar) {
+      sidebar.classList.add('collapsed');
+    }
+  }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', initializeSidebarState);
+
 async function uploadViaCloudinary(file) {
   const cloud = window.CLOUDINARY_CLOUD_NAME;
   const preset = window.CLOUDINARY_UPLOAD_PRESET;
@@ -501,11 +537,11 @@ function renderAttachment(attachment) {
   // Embedded base64 image
   if (attachment.attachmentType === 'image-base64') {
     return `
-      <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
-        <img src="${attachment.url}" alt="Image attachment" loading="lazy" style="max-width:200px; max-height:120px; border-radius:6px;" />
+      <div class="attachment-chip" style="display:flex; align-items:center; gap:10px; background:rgba(102,126,234,0.1); border:1px solid var(--border-soft); padding:12px; border-radius:12px;">
+        <img src="${attachment.url}" alt="Image attachment" loading="lazy" style="max-width:200px; max-height:120px; border-radius:6px; border:1px solid var(--border-soft);" />
         <div>
           <div style="font-weight:600; color:#667eea;">📎 ${escapeHtml(label)}${sizeLabel}</div>
-          <div style="font-size:0.85em; color:#666;">Embedded image</div>
+          <div style="font-size:0.85em; color:var(--text-secondary);">Embedded image</div>
         </div>
       </div>
     `;
@@ -514,11 +550,11 @@ function renderAttachment(attachment) {
   const isImageUrl = (attachment.type && attachment.type.startsWith('image')) || /\.(png|jpg|jpeg|gif|webp)$/i.test(attachment.url);
   if (isImageUrl) {
     return `
-      <div class="attachment-chip" style="display:flex; align-items:center; gap:10px;">
-        <img src="${attachment.url}" alt="Image attachment" loading="lazy" style="max-width:200px; max-height:120px; border-radius:6px;" />
+      <div class="attachment-chip" style="display:flex; align-items:center; gap:10px; background:rgba(102,126,234,0.1); border:1px solid var(--border-soft); padding:12px; border-radius:12px;">
+        <img src="${attachment.url}" alt="Image attachment" loading="lazy" style="max-width:200px; max-height:120px; border-radius:6px; border:1px solid var(--border-soft);" />
         <div>
           <div style="font-weight:600; color:#667eea;">📎 ${escapeHtml(label)}${sizeLabel}</div>
-          <div style="font-size:0.85em; color:#666;">Image file</div>
+          <div style="font-size:0.85em; color:var(--text-secondary);">Image file</div>
         </div>
       </div>
     `;
@@ -571,7 +607,7 @@ function loadPosts() {
         let tagsHTML = '';
         if (tags.length > 0) {
           tagsHTML = `<div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px;">
-            ${tags.map(tag => `<span style="display: inline-block; background: #e4e7fb; color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">#${tag}</span>`).join('')}
+            ${tags.map(tag => `<span style="display: inline-block; background: rgba(102, 126, 234, 0.15); color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; border: 1px solid var(--border-soft);">#${tag}</span>`).join('')}
           </div>`;
         }
         const isOwnPost = auth.currentUser && authorId === auth.currentUser.uid;
@@ -873,7 +909,7 @@ async function loadThread() {
     const attachmentHTML = renderAttachment(data.attachment);
 
     const tagsHTML = tags.length
-      ? `<div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px;">${tags.map(tag => `<span style="display: inline-block; background: #e4e7fb; color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">#${tag}</span>`).join('')}</div>`
+      ? `<div style="margin: 10px 0; display: flex; flex-wrap: wrap; gap: 6px;">${tags.map(tag => `<span style="display: inline-block; background: rgba(102, 126, 234, 0.15); color: #667eea; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; border: 1px solid var(--border-soft);">#${tag}</span>`).join('')}</div>`
       : "";
 
     currentThreadPostId = doc.id;
@@ -1720,7 +1756,7 @@ async function renderSimilarPeopleSection(currentUser) {
       section.style.marginTop = "24px";
       section.style.marginBottom = "24px";
       section.style.padding = "16px";
-      section.style.backgroundColor = "#f8f9ff";
+      section.style.backgroundColor = "transparent";
       section.style.borderRadius = "8px";
       
       // On dashboard, insert before the posts heading
@@ -1736,10 +1772,21 @@ async function renderSimilarPeopleSection(currentUser) {
     if (!suggestions.length) {
       section.innerHTML = `
         <div class="ai-output-header">👥 People With Similar Interests</div>
-        <div style="color:#666; margin-top:8px;">We couldn't find matches yet. Try adding tags to your posts or joining clubs.</div>
+        <div style="color:var(--text-secondary); margin-top:8px;">We couldn't find matches yet. Try adding tags to your posts or joining clubs.</div>
       `;
       console.log("No suggestions, showing fallback message");
       return;
+    }
+
+    // Check following status for each user
+    const followingStatuses = {};
+    for (const s of suggestions) {
+      try {
+        const followDoc = await db.collection("following").doc(currentUser.uid).collection("users").doc(s.userId).get();
+        followingStatuses[s.userId] = followDoc.exists;
+      } catch {
+        followingStatuses[s.userId] = false;
+      }
     }
 
     console.log("Rendering", suggestions.length, "suggestions");
@@ -1747,21 +1794,24 @@ async function renderSimilarPeopleSection(currentUser) {
     html += `<div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px;">`;
     suggestions.forEach(s => {
       const overlapPct = Math.round(s.score * 100);
+      const isFollowing = followingStatuses[s.userId];
+      const initial = (s.name || 'U').charAt(0).toUpperCase();
+      
       html += `
         <div class="card" style="min-width:220px; flex:1; min-width:200px;">
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <div style="width:40px; height:40px; border-radius:50%; background:#e4e7fb; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
-              ${s.photoURL ? `<img src="${s.photoURL}" alt="${escapeHtml(s.name)}" style="width:40px; height:40px; object-fit:cover;" />` : `<span style="color:#667eea; font-weight:700; font-size:18px;">${escapeHtml((s.name||'U').charAt(0).toUpperCase())}</span>`}
+            <div style="width:40px; height:40px; border-radius:50%; background:rgba(102,126,234,0.2); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; border:2px solid var(--border-soft);">
+              ${s.photoURL ? `<img src="${s.photoURL}" alt="${escapeHtml(s.name)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><span style="color:#667eea; font-weight:700; font-size:18px; display:none;">${initial}</span>` : `<span style="color:#667eea; font-weight:700; font-size:18px;">${initial}</span>`}
             </div>
             <div>
-              <div style="font-weight:600; color:#333;">${escapeHtml(s.name)}</div>
+              <div style="font-weight:600; color:var(--text-primary);">${escapeHtml(s.name)}</div>
               <div style="font-size:12px; color:#667eea;">Match: ${overlapPct}%</div>
             </div>
           </div>
-          <div style="font-size:11px; color:#999; margin-bottom:8px;">Tags ${Math.round(s.tagSim*100)}% · Clubs ${Math.round(s.clubSim*100)}%</div>
+          <div style="font-size:11px; color:var(--text-secondary); margin-bottom:8px;">Tags ${Math.round(s.tagSim*100)}% · Clubs ${Math.round(s.clubSim*100)}%</div>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="ghost-btn" onclick="window.location.href='profile.html?userId=${s.userId}'" style="flex:1; min-width:100px; font-size:12px; padding:6px;">View</button>
-            <button class="ghost-btn" onclick="followUser('${s.userId}')" style="flex:1; min-width:100px; font-size:12px; padding:6px;">Follow</button>
+            <button class="ghost-btn" onclick="${isFollowing ? `unfollowUser('${s.userId}'); setTimeout(() => renderSimilarPeopleSection(auth.currentUser), 500)` : `followUser('${s.userId}'); setTimeout(() => renderSimilarPeopleSection(auth.currentUser), 500)`}" style="flex:1; min-width:100px; font-size:12px; padding:6px;">${isFollowing ? 'Unfollow' : 'Follow'}</button>
           </div>
         </div>
       `;
@@ -1853,7 +1903,7 @@ async function setupFollowAuthorButton(targetUserId, targetName = "user") {
   }
 
   // Base button element
-  container.innerHTML = `<button id="followAuthorBtn" style="margin-left:10px; padding:6px 12px; border:1px solid #667eea; background:#fff; color:#667eea; border-radius:6px; font-weight:600; cursor:pointer; font-size:12px;">Follow</button>`;
+  container.innerHTML = `<button id="followAuthorBtn" style="margin-left:10px; padding:8px 16px; border:1px solid var(--border-soft); background:rgba(102, 126, 234, 0.1); color:var(--text-primary); border-radius:50px; font-weight:600; cursor:pointer; font-size:12px; transition: all 0.3s ease;">Follow</button>`;
   const btn = document.getElementById("followAuthorBtn");
   if (!btn) return;
 
@@ -2234,7 +2284,7 @@ async function setupProfileFollowButton(targetUserId, targetName = "user") {
     return;
   }
 
-  container.innerHTML = `<button id="profileFollowBtn" style="padding:10px 24px; border:1px solid #667eea; background:#fff; color:#667eea; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">Follow</button>`;
+  container.innerHTML = `<button id="profileFollowBtn" style="padding:12px 28px; border:1px solid var(--border-soft); background:rgba(102, 126, 234, 0.1); color:var(--text-primary); border-radius:50px; font-weight:700; cursor:pointer; font-size:14px; transition: all 0.3s ease;">Follow</button>`;
   const btn = document.getElementById("profileFollowBtn");
   if (!btn) return;
 
@@ -2246,7 +2296,7 @@ async function setupProfileFollowButton(targetUserId, targetName = "user") {
       btn.style.background = "#667eea";
       btn.style.color = "#fff";
     } else {
-      btn.style.background = "#fff";
+      btn.style.background = "rgba(102, 126, 234, 0.2)";
       btn.style.color = "#667eea";
     }
   };
@@ -2623,11 +2673,11 @@ async function performAISearch() {
     
     allResults.slice(0, 10).forEach(result => {
       resultsHTML += `
-        <div style="padding: 12px; margin-bottom: 10px; background: #f8f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+        <div style="padding: 16px; margin-bottom: 12px; background: rgba(102, 126, 234, 0.1); backdrop-filter: blur(10px); border-left: 4px solid; border-image: linear-gradient(135deg, #667eea, #764ba2) 1; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
           <div style="font-weight: 600; color: #667eea; margin-bottom: 5px;">${result.type}</div>
-          <div style="color: #333; margin-bottom: 5px; font-weight: 500;">${result.title}</div>
-          <div style="font-size: 0.85em; color: #666; margin-bottom: 5px;">By ${result.author}</div>
-          ${result.tags.length > 0 ? `<div style="font-size: 0.8em;">${result.tags.slice(0, 3).map(t => `<span style="display: inline-block; background: #e4e7fb; padding: 2px 6px; border-radius: 3px; margin-right: 5px; margin-bottom: 4px;">${t}</span>`).join('')}</div>` : ''}
+          <div style="color: var(--text-primary); margin-bottom: 5px; font-weight: 700;">${result.title}</div>
+          <div style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 5px;">By ${result.author}</div>
+          ${result.tags.length > 0 ? `<div style="font-size: 0.8em;">${result.tags.slice(0, 3).map(t => `<span style="display: inline-block; background: rgba(102, 126, 234, 0.15); color: #667eea; padding: 3px 8px; border-radius: 8px; margin-right: 5px; margin-bottom: 4px; border: 1px solid var(--border-soft);">${t}</span>`).join('')}</div>` : ''}
           <div style="font-size: 0.8em; color: #667eea; margin-top: 5px;">Relevance: ${result.relevance}</div>
         </div>
       `;
@@ -2649,7 +2699,7 @@ function switchTab(tabName) {
   const tabs = document.querySelectorAll('.profile-tab');
   tabs.forEach(t => {
     t.style.borderBottomColor = 'transparent';
-    t.style.color = '#666';
+    t.style.color = 'var(--text-secondary)';
     t.style.fontWeight = '400';
   });
   

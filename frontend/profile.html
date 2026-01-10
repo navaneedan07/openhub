@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OpenHub - Profile</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'><path fill='%23667eea' d='M320 32c-8.1 0-16.1 1.4-23.7 4.1L15.8 137.4C6.3 140.9 0 149.9 0 160s6.3 19.1 15.8 22.6l57.9 20.9C57.3 229.3 48 259.8 48 291.9v28.1c0 28.4-10.8 57.7-22.3 80.8c-6.5 13-13.9 25.8-22.5 37.6C0 442.7-.9 448.3 .9 453.4s6 8.9 11.2 10.2l64 16c4.2 1.1 8.7 .3 12.4-2s6.3-6.1 7.1-10.4c8.6-42.8 4.3-81.2-2.1-108.7C90.3 344.3 86 329.8 80 316.5V291.9c0-30.2 10.2-58.7 27.9-81.5c12.9-15.5 29.6-28 49.2-35.7l157-61.7c8.2-3.2 17.5 .8 20.7 9s-.8 17.5-9 20.7l-157 61.7c-12.4 4.9-23.3 12.4-32.2 21.6l159.6 57.6c7.6 2.7 15.6 4.1 23.7 4.1s16.1-1.4 23.7-4.1L624.2 182.6c9.5-3.4 15.8-12.5 15.8-22.6s-6.3-19.1-15.8-22.6L343.7 36.1C336.1 33.4 328.1 32 320 32zM128 408c0 35.3 86 72 192 72s192-36.7 192-72L496.7 262.6 354.5 314c-11.1 4-22.8 6-34.5 6s-23.5-2-34.5-6L143.3 262.6 128 408z'/></svg>" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -22,44 +24,47 @@
     <!-- Left Sidebar Navigation -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="sidebar-brand">🏠 OpenHub</div>
+        <div class="sidebar-brand">OpenHub</div>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
       <nav class="sidebar-nav">
         <a href="home.html" class="nav-item">
-          <span class="nav-icon">🏠</span>
+          <i class="fas fa-home nav-icon"></i>
           <span class="nav-text">Home</span>
         </a>
         <a href="dashboard.html" class="nav-item">
-          <span class="nav-icon">📊</span>
+          <i class="fas fa-chart-line nav-icon"></i>
           <span class="nav-text">Dashboard</span>
         </a>
         <a href="events.html" class="nav-item">
-          <span class="nav-icon">📅</span>
+          <i class="fas fa-calendar nav-icon"></i>
           <span class="nav-text">Events</span>
         </a>
         <a href="clubs.html" class="nav-item">
-          <span class="nav-icon">🤝</span>
+          <i class="fas fa-handshake nav-icon"></i>
           <span class="nav-text">Clubs</span>
         </a>
         <a href="resources.html" class="nav-item">
-          <span class="nav-icon">📚</span>
+          <i class="fas fa-book nav-icon"></i>
           <span class="nav-text">Resources</span>
         </a>
         <a href="profile.html" class="nav-item active">
-          <span class="nav-icon">👤</span>
+          <i class="fas fa-user nav-icon"></i>
           <span class="nav-text">Profile</span>
         </a>
       </nav>
       <div class="sidebar-footer">
-        <button class="logout-btn-sidebar" onclick="logout()">🚪 Logout</button>
+        <button class="logout-btn-sidebar" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span class="logout-text"> Logout</span></button>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <div class="main-content" style="background:#f8f9fa; padding:0;">
+    <div class="main-content" style="padding:0;">
       
       <!-- Profile Header -->
-      <div style="background:#fff; padding:32px 40px; border-bottom:1px solid #e0e0e0;">
+      <div style="background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); padding:32px 40px; border-bottom:1px solid var(--border-soft);">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px;">
           <div style="display:flex; gap:24px; align-items:center;">
             <div class="profile-avatar" style="width:100px; height:100px; border-radius:50%; background:#667eea; display:flex; align-items:center; justify-content:center; font-size:42px; font-weight:700; color:#fff; overflow:hidden;">
@@ -67,23 +72,23 @@
               <span id="avatarInitialProf">U</span>
             </div>
             <div>
-              <h1 id="profileDisplayName" style="font-size:32px; font-weight:700; margin:0 0 8px 0; color:#1a1a1a;">User</h1>
-              <p id="profileDisplayTitle" style="font-size:16px; margin:0 0 12px 0; color:#666;">Student at Madras Institute of Technology</p>
-              <div style="display:flex; gap:16px; font-size:14px; color:#666;">
+              <h1 id="profileDisplayName" style="font-size:32px; font-weight:700; margin:0 0 8px 0; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">User</h1>
+              <p id="profileDisplayTitle" style="font-size:16px; margin:0 0 12px 0; color:var(--text-secondary);">Student at Madras Institute of Technology</p>
+              <div style="display:flex; gap:16px; font-size:14px; color:var(--text-secondary);">
                 <span><strong id="followerCount">0</strong> Followers</span>
                 <span>•</span>
                 <span><strong id="followingCount">0</strong> Following</span>
               </div>
             </div>
           </div>
-          <button id="profileEditBtn" style="padding:10px 24px; border:1px solid #667eea; background:#fff; color:#667eea; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">✏️ Edit Profile</button>
+          <button id="profileEditBtn" style="padding:10px 24px; border:1px solid var(--border-soft); background:rgba(102,126,234,0.1); color:#667eea; border-radius:50px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.3s ease;">✏️ Edit Profile</button>
         </div>
 
         <!-- Tabs -->
-        <div style="display:flex; gap:32px; border-bottom:2px solid #e0e0e0; margin-top:24px;">
-          <div id="tabOverview" class="profile-tab active" style="padding:12px 0; border-bottom:3px solid #667eea; margin-bottom:-2px; color:#667eea; font-weight:600; cursor:pointer;" onclick="switchTab('overview')">Overview</div>
-          <div id="tabPosts" class="profile-tab" style="padding:12px 0; color:#666; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px;" onclick="switchTab('posts')">Posts</div>
-          <div id="tabClubs" class="profile-tab" style="padding:12px 0; color:#666; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px;" onclick="switchTab('clubs')">Clubs</div>
+        <div style="display:flex; gap:32px; border-bottom:2px solid var(--border-soft); margin-top:24px;">
+          <div id="tabOverview" class="profile-tab active" style="padding:12px 0; border-bottom:3px solid #667eea; margin-bottom:-2px; color:var(--text-primary); font-weight:600; cursor:pointer;" onclick="switchTab('overview')">Overview</div>
+          <div id="tabPosts" class="profile-tab" style="padding:12px 0; color:var(--text-secondary); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px;" onclick="switchTab('posts')">Posts</div>
+          <div id="tabClubs" class="profile-tab" style="padding:12px 0; color:var(--text-secondary); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px;" onclick="switchTab('clubs')">Clubs</div>
         </div>
       </div>
 
@@ -93,58 +98,58 @@
         <!-- Overview Tab Content -->
         <div id="contentOverview" class="tab-content">
         <!-- Profile Display Section -->
-        <div id="profileDisplayCard" style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <div id="profileDisplayCard" style="background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); border-radius:12px; padding:24px; margin-bottom:24px; border:1px solid var(--border-soft);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:600; margin:0; color:#1a1a1a;">Profile Details ✏️</h2>
+            <h2 style="font-size:18px; font-weight:600; margin:0; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Profile Details ✏️</h2>
           </div>
-          <div style="display:grid; gap:16px; color:#333;">
+          <div style="display:grid; gap:16px;">
             <div style="display:flex; gap:12px;">
-              <span style="font-weight:600; color:#666; min-width:140px;">Name:</span>
-              <span id="displayName" style="color:#1a1a1a;">—</span>
+              <span style="font-weight:600; color:var(--text-secondary); min-width:140px;">Name:</span>
+              <span id="displayName" style="color:var(--text-primary);">—</span>
             </div>
             <div style="display:flex; gap:12px;">
-              <span style="font-weight:600; color:#666; min-width:140px;">Department:</span>
-              <span id="displayDept" style="color:#1a1a1a;">—</span>
+              <span style="font-weight:600; color:var(--text-secondary); min-width:140px;">Department:</span>
+              <span id="displayDept" style="color:var(--text-primary);">—</span>
             </div>
             <div style="display:flex; gap:12px;">
-              <span style="font-weight:600; color:#666; min-width:140px;">Year:</span>
-              <span id="displayYear" style="color:#1a1a1a;">—</span>
+              <span style="font-weight:600; color:var(--text-secondary); min-width:140px;">Year:</span>
+              <span id="displayYear" style="color:var(--text-primary);">—</span>
             </div>
             <div style="display:flex; gap:12px;">
-              <span style="font-weight:600; color:#666; min-width:140px;">Registration No.:</span>
-              <span id="displayReg" style="color:#1a1a1a;">—</span>
+              <span style="font-weight:600; color:var(--text-secondary); min-width:140px;">Registration No.:</span>
+              <span id="displayReg" style="color:var(--text-primary);">—</span>
             </div>
           </div>
         </div>
 
         <!-- Profile Edit Form (hidden by default) -->
-        <div id="profileEditCard" style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; display:none; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">Edit Profile</h2>
+        <div id="profileEditCard" style="background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); border-radius:12px; padding:24px; margin-bottom:24px; display:none; border:1px solid var(--border-soft);">
+          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">Edit Profile</h2>
           <div style="display:grid; gap:16px; max-width:600px;">
             <div>
-              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Name</label>
-              <input id="profileName" type="text" placeholder="Your full name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+              <label style="display:block; font-weight:600; color:var(--text-primary); margin-bottom:6px; font-size:14px;">Name</label>
+              <input id="profileName" type="text" placeholder="Your full name" style="width:100%; padding:12px; border:1px solid var(--border-soft); background:rgba(255,255,255,0.05); color:var(--text-primary); border-radius:8px; font-size:14px; box-sizing:border-box;" />
             </div>
             <div>
-              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Department</label>
-              <input id="profileDept" type="text" placeholder="e.g., Computer Technology" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+              <label style="display:block; font-weight:600; color:var(--text-primary); margin-bottom:6px; font-size:14px;">Department</label>
+              <input id="profileDept" type="text" placeholder="e.g., Computer Technology" style="width:100%; padding:12px; border:1px solid var(--border-soft); background:rgba(255,255,255,0.05); color:var(--text-primary); border-radius:8px; font-size:14px; box-sizing:border-box;" />
             </div>
             <div>
-              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Year</label>
-              <input id="profileYear" type="text" placeholder="e.g., 2" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+              <label style="display:block; font-weight:600; color:var(--text-primary); margin-bottom:6px; font-size:14px;">Year</label>
+              <input id="profileYear" type="text" placeholder="e.g., 2" style="width:100%; padding:12px; border:1px solid var(--border-soft); background:rgba(255,255,255,0.05); color:var(--text-primary); border-radius:8px; font-size:14px; box-sizing:border-box;" />
             </div>
             <div>
-              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Registration No.</label>
-              <input id="profileReg" type="text" placeholder="e.g., 2020503557" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
+              <label style="display:block; font-weight:600; color:var(--text-primary); margin-bottom:6px; font-size:14px;">Registration No.</label>
+              <input id="profileReg" type="text" placeholder="e.g., 2020503557" style="width:100%; padding:12px; border:1px solid var(--border-soft); background:rgba(255,255,255,0.05); color:var(--text-primary); border-radius:8px; font-size:14px; box-sizing:border-box;" />
             </div>
             <div>
-              <label style="display:block; font-weight:600; color:#333; margin-bottom:6px; font-size:14px;">Profile Photo</label>
-              <input id="profilePhoto" type="file" accept="image/*" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; box-sizing:border-box;" />
-              <small style="color:#666; margin-top:4px; display:block;">Upload a profile picture (max 5 MB)</small>
+              <label style="display:block; font-weight:600; color:var(--text-primary); margin-bottom:6px; font-size:14px;">Profile Photo</label>
+              <input id="profilePhoto" type="file" accept="image/*" style="width:100%; padding:12px; border:1px solid var(--border-soft); background:rgba(255,255,255,0.05); color:var(--text-primary); border-radius:8px; font-size:14px; box-sizing:border-box;" />
+              <small style="color:var(--text-secondary); margin-top:4px; display:block;">Upload a profile picture (max 5 MB)</small>
             </div>
             <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
-              <button id="profileSaveBtn" style="padding:12px 28px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">Save Changes</button>
-              <button id="profileCancelBtn" style="padding:12px 28px; background:#fff; color:#666; border:1px solid #ddd; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px;">Cancel</button>
+              <button id="profileSaveBtn" style="padding:12px 28px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; border:none; border-radius:50px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.3s ease;">Save Changes</button>
+              <button id="profileCancelBtn" style="padding:12px 28px; background:rgba(255,255,255,0.05); color:var(--text-primary); border:1px solid var(--border-soft); border-radius:50px; font-weight:600; cursor:pointer; font-size:14px; transition:all 0.3s ease;">Cancel</button>
               <div id="profileSaveStatus" style="color:#4a5bdc; font-weight:600; font-size:14px;"></div>
             </div>
           </div>
@@ -153,16 +158,16 @@
 
         <!-- Posts Tab Content -->
         <div id="contentPosts" class="tab-content" style="display:none;">
-        <div style="background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">My Posts</h2>
+        <div style="background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); border-radius:12px; padding:24px; margin-bottom:24px; border:1px solid var(--border-soft);">
+          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">My Posts</h2>
           <div id="userPosts"></div>
         </div>
         </div>
 
         <!-- Clubs Tab Content -->
         <div id="contentClubs" class="tab-content" style="display:none;">
-        <div style="background:#fff; border-radius:12px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; color:#1a1a1a;">My Clubs</h2>
+        <div style="background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); border-radius:12px; padding:24px; border:1px solid var(--border-soft);">
+          <h2 style="font-size:18px; font-weight:600; margin:0 0 20px 0; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">My Clubs</h2>
           <div id="userClubs" class="card-grid"></div>
         </div>
         </div>
