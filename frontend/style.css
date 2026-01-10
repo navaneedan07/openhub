@@ -786,6 +786,10 @@ button:active {
   margin-bottom: 8px;
 }
 
+.year-container {
+  width: 100%;
+}
+
 .folder-icon {
   font-size: 1.8em;
   min-width: 30px;
@@ -848,7 +852,7 @@ button:active {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 4px;
   margin-bottom: 8px;
   border-left: 3px solid rgba(102, 126, 234, 0.2);
   padding-top: 8px;

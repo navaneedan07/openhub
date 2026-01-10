@@ -1353,6 +1353,10 @@ function renderDepartments(departments) {
     
     // Years
     [1, 2, 3, 4].forEach((year) => {
+      // Create a container for each year + its content
+      const yearContainer = document.createElement("div");
+      yearContainer.className = "year-container";
+      
       const yearRow = document.createElement("div");
       yearRow.className = "file-row";
       
@@ -1408,8 +1412,9 @@ function renderDepartments(departments) {
         yearIcon.textContent = isOpen ? "📁" : "📂";
       };
       
-      deptContent.appendChild(yearRow);
-      deptContent.appendChild(yearContent);
+      yearContainer.appendChild(yearRow);
+      yearContainer.appendChild(yearContent);
+      deptContent.appendChild(yearContainer);
     });
     
     deptBtn.onclick = (e) => {
