@@ -618,7 +618,7 @@ function loadPosts() {
           </div>`;
         }
         const isOwnPost = auth.currentUser && authorId === auth.currentUser.uid;
-        const deleteBtn = isOwnPost ? `<button class="ghost-btn" onclick="deletePost('${doc.id}')" style="color:#d32f2f;">🗑️ Delete</button>` : '';
+        const deleteBtn = isOwnPost ? `<button class="ghost-btn" onclick="deletePost('${doc.id}')" style="color:#d32f2f;">Delete</button>` : '';
         const authorLink = authorId ? `<span class="post-author" style="cursor:pointer; color:#667eea;" onclick="window.location.href='profile.html?userId=${authorId}'">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>` : `<span class="post-author">👤 ${escapeHtml(data.authorName || "Anonymous")}</span>`;
         
         postElement.innerHTML = `
