@@ -790,6 +790,12 @@ button:active {
   gap: 10px;
 }
 
+.year-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .year-button {
   background: var(--primary);
   color: white;
@@ -809,6 +815,37 @@ button:active {
 
 .year-button:active {
   transform: scale(0.95);
+}
+
+.semesters-container {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.semesters-container.open {
+  display: flex;
+}
+
+.semester-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9em;
+}
+
+.semester-button:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: scale(1.03);
+}
+
+.semester-button:active {
+  transform: scale(0.98);
 }
 
 @media (max-width: 768px) {
@@ -833,6 +870,11 @@ button:active {
   .year-button {
     padding: 10px 12px;
     font-size: 0.9em;
+  }
+
+  .semester-button {
+    padding: 8px 10px;
+    font-size: 0.85em;
   }
 }
   .sidebar {

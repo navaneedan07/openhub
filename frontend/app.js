@@ -1100,96 +1100,216 @@ function loadResources() {
   const container = document.getElementById("resourcesContainer");
   if (!container) return;
 
-  // Department structure with years and sample links
+  // Department structure with years, semesters and sample links
   const departments = [
     {
       name: "B.E - Computer Science and Engineering",
       years: {
-        1: "https://example.com/cse/year1",
-        2: "https://example.com/cse/year2",
-        3: "https://example.com/cse/year3",
-        4: "https://example.com/cse/year4"
+        1: {
+          odd: "https://example.com/cse/year1/odd",
+          even: "https://example.com/cse/year1/even"
+        },
+        2: {
+          odd: "https://example.com/cse/year2/odd",
+          even: "https://example.com/cse/year2/even"
+        },
+        3: {
+          odd: "https://example.com/cse/year3/odd",
+          even: "https://example.com/cse/year3/even"
+        },
+        4: {
+          odd: "https://example.com/cse/year4/odd",
+          even: "https://example.com/cse/year4/even"
+        }
       }
     },
     {
       name: "B.Tech - Artificial Intelligence and Data Science",
       years: {
-        1: "https://example.com/aids/year1",
-        2: "https://example.com/aids/year2",
-        3: "https://example.com/aids/year3",
-        4: "https://example.com/aids/year4"
+        1: {
+          odd: "https://example.com/aids/year1/odd",
+          even: "https://example.com/aids/year1/even"
+        },
+        2: {
+          odd: "https://example.com/aids/year2/odd",
+          even: "https://example.com/aids/year2/even"
+        },
+        3: {
+          odd: "https://example.com/aids/year3/odd",
+          even: "https://example.com/aids/year3/even"
+        },
+        4: {
+          odd: "https://example.com/aids/year4/odd",
+          even: "https://example.com/aids/year4/even"
+        }
       }
     },
     {
       name: "B.E - Electronics and Communication Engineering",
       years: {
-        1: "https://example.com/ece/year1",
-        2: "https://example.com/ece/year2",
-        3: "https://example.com/ece/year3",
-        4: "https://example.com/ece/year4"
+        1: {
+          odd: "https://example.com/ece/year1/odd",
+          even: "https://example.com/ece/year1/even"
+        },
+        2: {
+          odd: "https://example.com/ece/year2/odd",
+          even: "https://example.com/ece/year2/even"
+        },
+        3: {
+          odd: "https://example.com/ece/year3/odd",
+          even: "https://example.com/ece/year3/even"
+        },
+        4: {
+          odd: "https://example.com/ece/year4/odd",
+          even: "https://example.com/ece/year4/even"
+        }
       }
     },
     {
       name: "B.Tech - Information Technology",
       years: {
-        1: "https://example.com/it/year1",
-        2: "https://example.com/it/year2",
-        3: "https://example.com/it/year3",
-        4: "https://example.com/it/year4"
+        1: {
+          odd: "https://example.com/it/year1/odd",
+          even: "https://example.com/it/year1/even"
+        },
+        2: {
+          odd: "https://example.com/it/year2/odd",
+          even: "https://example.com/it/year2/even"
+        },
+        3: {
+          odd: "https://example.com/it/year3/odd",
+          even: "https://example.com/it/year3/even"
+        },
+        4: {
+          odd: "https://example.com/it/year4/odd",
+          even: "https://example.com/it/year4/even"
+        }
       }
     },
     {
       name: "B.E - Robotics and Automation",
       years: {
-        1: "https://example.com/ra/year1",
-        2: "https://example.com/ra/year2",
-        3: "https://example.com/ra/year3",
-        4: "https://example.com/ra/year4"
+        1: {
+          odd: "https://example.com/ra/year1/odd",
+          even: "https://example.com/ra/year1/even"
+        },
+        2: {
+          odd: "https://example.com/ra/year2/odd",
+          even: "https://example.com/ra/year2/even"
+        },
+        3: {
+          odd: "https://example.com/ra/year3/odd",
+          even: "https://example.com/ra/year3/even"
+        },
+        4: {
+          odd: "https://example.com/ra/year4/odd",
+          even: "https://example.com/ra/year4/even"
+        }
       }
     },
     {
       name: "B.E - Aeronautical Engineering",
       years: {
-        1: "https://example.com/ae/year1",
-        2: "https://example.com/ae/year2",
-        3: "https://example.com/ae/year3",
-        4: "https://example.com/ae/year4"
+        1: {
+          odd: "https://example.com/ae/year1/odd",
+          even: "https://example.com/ae/year1/even"
+        },
+        2: {
+          odd: "https://example.com/ae/year2/odd",
+          even: "https://example.com/ae/year2/even"
+        },
+        3: {
+          odd: "https://example.com/ae/year3/odd",
+          even: "https://example.com/ae/year3/even"
+        },
+        4: {
+          odd: "https://example.com/ae/year4/odd",
+          even: "https://example.com/ae/year4/even"
+        }
       }
     },
     {
       name: "B.E - Automobile Engineering",
       years: {
-        1: "https://example.com/auto/year1",
-        2: "https://example.com/auto/year2",
-        3: "https://example.com/auto/year3",
-        4: "https://example.com/auto/year4"
+        1: {
+          odd: "https://example.com/auto/year1/odd",
+          even: "https://example.com/auto/year1/even"
+        },
+        2: {
+          odd: "https://example.com/auto/year2/odd",
+          even: "https://example.com/auto/year2/even"
+        },
+        3: {
+          odd: "https://example.com/auto/year3/odd",
+          even: "https://example.com/auto/year3/even"
+        },
+        4: {
+          odd: "https://example.com/auto/year4/odd",
+          even: "https://example.com/auto/year4/even"
+        }
       }
     },
     {
       name: "B.E - Electronics and Instrumentation Engineering",
       years: {
-        1: "https://example.com/eie/year1",
-        2: "https://example.com/eie/year2",
-        3: "https://example.com/eie/year3",
-        4: "https://example.com/eie/year4"
+        1: {
+          odd: "https://example.com/eie/year1/odd",
+          even: "https://example.com/eie/year1/even"
+        },
+        2: {
+          odd: "https://example.com/eie/year2/odd",
+          even: "https://example.com/eie/year2/even"
+        },
+        3: {
+          odd: "https://example.com/eie/year3/odd",
+          even: "https://example.com/eie/year3/even"
+        },
+        4: {
+          odd: "https://example.com/eie/year4/odd",
+          even: "https://example.com/eie/year4/even"
+        }
       }
     },
     {
       name: "B.E - Production Engineering",
       years: {
-        1: "https://example.com/pe/year1",
-        2: "https://example.com/pe/year2",
-        3: "https://example.com/pe/year3",
-        4: "https://example.com/pe/year4"
+        1: {
+          odd: "https://example.com/pe/year1/odd",
+          even: "https://example.com/pe/year1/even"
+        },
+        2: {
+          odd: "https://example.com/pe/year2/odd",
+          even: "https://example.com/pe/year2/even"
+        },
+        3: {
+          odd: "https://example.com/pe/year3/odd",
+          even: "https://example.com/pe/year3/even"
+        },
+        4: {
+          odd: "https://example.com/pe/year4/odd",
+          even: "https://example.com/pe/year4/even"
+        }
       }
     },
     {
       name: "B.Tech - Rubber and Plastics Technology",
       years: {
-        1: "https://example.com/rpt/year1",
-        2: "https://example.com/rpt/year2",
-        3: "https://example.com/rpt/year3",
-        4: "https://example.com/rpt/year4"
+        1: {
+          odd: "https://example.com/rpt/year1/odd",
+          even: "https://example.com/rpt/year1/even"
+        },
+        2: {
+          odd: "https://example.com/rpt/year2/odd",
+          even: "https://example.com/rpt/year2/even"
+        },
+        3: {
+          odd: "https://example.com/rpt/year3/odd",
+          even: "https://example.com/rpt/year3/even"
+        },
+        4: {
+          odd: "https://example.com/rpt/year4/odd",
+          even: "https://example.com/rpt/year4/even"
+        }
       }
     }
   ];
@@ -1216,18 +1336,55 @@ function renderDepartments(departments) {
     yearsContainer.className = "years-container";
     
     [1, 2, 3, 4].forEach((year) => {
+      const yearSection = document.createElement("div");
+      yearSection.className = "year-section";
+      
       const yearBtn = document.createElement("button");
       yearBtn.className = "year-button";
       yearBtn.textContent = `Year ${year}`;
-      yearBtn.onclick = () => {
-        const url = dept.years[year];
+      
+      const semestersContainer = document.createElement("div");
+      semestersContainer.className = "semesters-container";
+      semestersContainer.style.display = "none";
+      
+      const oddBtn = document.createElement("button");
+      oddBtn.className = "semester-button";
+      oddBtn.textContent = "Odd Semester";
+      oddBtn.onclick = (e) => {
+        e.stopPropagation();
+        const url = dept.years[year].odd;
         if (url && url !== "#") {
           window.open(url, "_blank");
         } else {
-          alert("Link not configured for this year");
+          alert("Link not configured for this semester");
         }
       };
-      yearsContainer.appendChild(yearBtn);
+      
+      const evenBtn = document.createElement("button");
+      evenBtn.className = "semester-button";
+      evenBtn.textContent = "Even Semester";
+      evenBtn.onclick = (e) => {
+        e.stopPropagation();
+        const url = dept.years[year].even;
+        if (url && url !== "#") {
+          window.open(url, "_blank");
+        } else {
+          alert("Link not configured for this semester");
+        }
+      };
+      
+      semestersContainer.appendChild(oddBtn);
+      semestersContainer.appendChild(evenBtn);
+      
+      yearBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = semestersContainer.style.display === "flex";
+        semestersContainer.style.display = isOpen ? "none" : "flex";
+      };
+      
+      yearSection.appendChild(yearBtn);
+      yearSection.appendChild(semestersContainer);
+      yearsContainer.appendChild(yearSection);
     });
     
     deptCard.appendChild(deptName);
