@@ -1321,78 +1321,106 @@ function renderDepartments(departments) {
   const container = document.getElementById("resourcesContainer");
   container.innerHTML = "";
   
-  const deptGrid = document.createElement("div");
-  deptGrid.className = "departments-grid";
+  const folderTree = document.createElement("div");
+  folderTree.className = "folder-tree";
 
-  departments.forEach((dept, idx) => {
-    const deptCard = document.createElement("div");
-    deptCard.className = "department-card";
+  departments.forEach((dept, deptIdx) => {
+    // Department folder
+    const deptFolder = document.createElement("div");
+    deptFolder.className = "folder-item";
     
-    const deptName = document.createElement("h3");
-    deptName.className = "department-name";
-    deptName.textContent = dept.name;
+    const deptHeader = document.createElement("div");
+    deptHeader.className = "folder-header";
     
-    const yearsContainer = document.createElement("div");
-    yearsContainer.className = "years-container";
+    const deptToggle = document.createElement("span");
+    deptToggle.className = "folder-toggle";
+    deptToggle.textContent = "📁";
     
+    const deptLabel = document.createElement("span");
+    deptLabel.className = "folder-label";
+    deptLabel.textContent = dept.name;
+    
+    deptHeader.appendChild(deptToggle);
+    deptHeader.appendChild(deptLabel);
+    
+    const deptContent = document.createElement("div");
+    deptContent.className = "folder-content";
+    deptContent.style.display = "none";
+    
+    // Years (1, 2, 3, 4)
     [1, 2, 3, 4].forEach((year) => {
-      const yearSection = document.createElement("div");
-      yearSection.className = "year-section";
+      const yearFolder = document.createElement("div");
+      yearFolder.className = "folder-item nested-level-1";
       
-      const yearBtn = document.createElement("button");
-      yearBtn.className = "year-button";
-      yearBtn.textContent = `Year ${year}`;
+      const yearHeader = document.createElement("div");
+      yearHeader.className = "folder-header";
       
-      const semestersContainer = document.createElement("div");
-      semestersContainer.className = "semesters-container";
-      semestersContainer.style.display = "none";
+      const yearToggle = document.createElement("span");
+      yearToggle.className = "folder-toggle";
+      yearToggle.textContent = "📁";
       
-      const oddBtn = document.createElement("button");
-      oddBtn.className = "semester-button";
-      oddBtn.textContent = "Odd Semester";
-      oddBtn.onclick = (e) => {
+      const yearLabel = document.createElement("span");
+      yearLabel.className = "folder-label";
+      yearLabel.textContent = `Year ${year}`;
+      
+      yearHeader.appendChild(yearToggle);
+      yearHeader.appendChild(yearLabel);
+      
+      const yearContent = document.createElement("div");
+      yearContent.className = "folder-content";
+      yearContent.style.display = "none";
+      
+      // Semesters
+      ["Odd Semester", "Even Semester"].forEach((semName) => {
+        const semKey = semName.includes("Odd") ? "odd" : "even";
+        const semFile = document.createElement("div");
+        semFile.className = "folder-item nested-level-2 file-item";
+        
+        const semLink = document.createElement("a");
+        semLink.className = "file-link";
+        semLink.textContent = "📄 " + semName;
+        semLink.href = "#";
+        semLink.onclick = (e) => {
+          e.preventDefault();
+          const url = dept.years[year][semKey];
+          if (url && url !== "#") {
+            window.open(url, "_blank");
+          } else {
+            alert("Link not configured for this semester");
+          }
+        };
+        
+        semFile.appendChild(semLink);
+        yearContent.appendChild(semFile);
+      });
+      
+      // Year toggle click handler
+      yearHeader.onclick = (e) => {
         e.stopPropagation();
-        const url = dept.years[year].odd;
-        if (url && url !== "#") {
-          window.open(url, "_blank");
-        } else {
-          alert("Link not configured for this semester");
-        }
+        const isOpen = yearContent.style.display === "none";
+        yearContent.style.display = isOpen ? "block" : "none";
+        yearToggle.textContent = isOpen ? "📂" : "📁";
       };
       
-      const evenBtn = document.createElement("button");
-      evenBtn.className = "semester-button";
-      evenBtn.textContent = "Even Semester";
-      evenBtn.onclick = (e) => {
-        e.stopPropagation();
-        const url = dept.years[year].even;
-        if (url && url !== "#") {
-          window.open(url, "_blank");
-        } else {
-          alert("Link not configured for this semester");
-        }
-      };
-      
-      semestersContainer.appendChild(oddBtn);
-      semestersContainer.appendChild(evenBtn);
-      
-      yearBtn.onclick = (e) => {
-        e.stopPropagation();
-        const isOpen = semestersContainer.style.display === "flex";
-        semestersContainer.style.display = isOpen ? "none" : "flex";
-      };
-      
-      yearSection.appendChild(yearBtn);
-      yearSection.appendChild(semestersContainer);
-      yearsContainer.appendChild(yearSection);
+      yearFolder.appendChild(yearHeader);
+      yearFolder.appendChild(yearContent);
+      deptContent.appendChild(yearFolder);
     });
     
-    deptCard.appendChild(deptName);
-    deptCard.appendChild(yearsContainer);
-    deptGrid.appendChild(deptCard);
+    // Department toggle click handler
+    deptHeader.onclick = (e) => {
+      e.stopPropagation();
+      const isOpen = deptContent.style.display === "none";
+      deptContent.style.display = isOpen ? "block" : "none";
+      deptToggle.textContent = isOpen ? "📂" : "📁";
+    };
+    
+    deptFolder.appendChild(deptHeader);
+    deptFolder.appendChild(deptContent);
+    folderTree.appendChild(deptFolder);
   });
 
-  container.appendChild(deptGrid);
+  container.appendChild(folderTree);
 }
 
 function bindProfileForm(user) {
