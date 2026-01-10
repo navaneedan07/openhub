@@ -2454,9 +2454,13 @@ function generateSmartFallback(prompt, mode) {
 }
 
 async function moderateContent(text) {
-  // Fast path to reduce false positives: short/benign text is allowed immediately
-  const quickClean = text.length <= 8 || /^[a-zA-Z0-9 ,.!?'"-]+$/.test(text);
-  if (quickClean) return true;
+  // Remove quick-allow for short text - even single words like "nude" need AI check
+  // Only skip moderation for very basic navigation/confirmation text
+  const trimmed = text.trim().toLowerCase();
+  const trivialTexts = ['yes', 'no', 'ok', 'thanks', 'hi', 'hello', 'bye', 'help'];
+  if (trivialTexts.includes(trimmed) && text.length < 10) {
+    return true;
+  }
 
   try {
     const response = await fetch(GEMINI_PROXY_URL, {
