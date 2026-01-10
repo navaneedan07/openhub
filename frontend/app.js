@@ -733,13 +733,15 @@ function renderComments(snapshot, container, allowReply = false, postId = null, 
     const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
     const replyLabel = data.parentCommentId ? '<div class="comment-reply-label">↳ Replying to a comment</div>' : '';
     const safeAuthor = escapeForAttr(data.authorName || "Member");
+    const authorId = data.authorId || '';
+    const authorLink = authorId ? `<span class="comment-author" style="cursor:pointer; color:#667eea;" onclick="window.location.href='profile.html?userId=${authorId}'">${escapeHtml(data.authorName || "Member")}</span>` : `<span class="comment-author">${escapeHtml(data.authorName || "Member")}</span>`;
     const replyBtn = allowReply && postId ? `<button class="ghost-btn" onclick="startReply('${doc.id}', '${safeAuthor}')">Reply</button>` : '';
     fragments.push(`
       <div class="comment${data.parentCommentId ? ' comment-nested' : ''}">
         ${replyLabel}
         <div class="comment-text">${highlightMentions(data.text || "")}</div>
         <div class="comment-meta">
-          <span class="comment-author">${escapeHtml(data.authorName || "Member")}</span>
+          ${authorLink}
           <span>${formatTime(timestamp)}</span>
         </div>
         ${replyBtn ? `<div class="comment-actions">${replyBtn}</div>` : ''}
