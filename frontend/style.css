@@ -757,128 +757,115 @@ button:active {
 .browse-files-container {
   background: white;
   border-radius: 12px;
-  padding: 20px;
+  padding: 25px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .browse-title {
-  color: var(--primary);
+  color: #1f2937;
   font-size: 1.5em;
   font-weight: 700;
   margin: 0 0 20px 0;
-  padding: 0;
+  padding: 0 0 15px 0;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .files-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 8px;
 }
 
 .file-row {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 12px 15px;
-  border-bottom: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
+  gap: 12px;
+  padding: 0;
 }
 
-.file-row:hover {
-  background: rgba(79, 70, 229, 0.05);
-}
-
-.file-row:last-child {
-  border-bottom: none;
-}
-
-.folder-icon-container {
-  font-size: 1.5em;
+.folder-icon,
+.file-icon {
+  font-size: 1.8em;
   min-width: 30px;
-  text-align: center;
   cursor: pointer;
-}
-
-.folder-icon-container.nested-icon {
-  font-size: 1.3em;
-}
-
-.file-icon-container {
-  font-size: 1.3em;
-  min-width: 30px;
-  text-align: center;
+  user-select: none;
 }
 
 .file-button {
   flex: 1;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
+  padding: 12px 20px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
-  font-size: 0.95em;
+  font-size: 1em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.dept-button {
-  background: #fbbf24;
-  color: #333;
-  border: 2px solid #f59e0b;
+.folder-button {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+  border: none;
 }
 
-.dept-button:hover {
-  background: #f59e0b;
+.folder-button:hover {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
-  transform: translateX(2px);
+  transform: translateX(3px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.year-button {
-  background: #fbbf24;
-  color: #333;
-  border: 2px solid #f59e0b;
-}
-
-.year-button:hover {
-  background: #f59e0b;
+.file-link-button {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
   color: white;
-  transform: translateX(2px);
+  border: none;
 }
 
-.semester-button {
-  background: #06b6d4;
-  color: white;
-  border: 2px solid #0891b2;
+.file-link-button:hover {
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  transform: translateX(3px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.semester-button:hover {
-  background: #0891b2;
-  transform: translateX(2px);
-}
-
-.semester-button:active {
+.file-link-button:active {
   transform: scale(0.98);
 }
 
-.nested-file-row {
-  margin-left: 40px;
-  padding-left: 10px;
-}
-
-.nested-file-row-2 {
-  margin-left: 80px;
-  padding-left: 10px;
-}
-
-.folder-expand-content {
-  width: 100%;
+.nested-content {
+  padding-left: 42px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* Scrollbar styling */
+.browse-files-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.browse-files-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.browse-files-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+}
+
+.browse-files-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
 }
 
 @media (max-width: 768px) {
   .browse-files-container {
-    padding: 15px;
+    padding: 20px;
   }
 
   .browse-title {
@@ -886,28 +873,24 @@ button:active {
     margin-bottom: 15px;
   }
 
-  .file-row {
-    padding: 10px 12px;
-    gap: 12px;
-  }
-
   .file-button {
-    padding: 8px 12px;
-    font-size: 0.9em;
+    padding: 10px 16px;
+    font-size: 0.95em;
   }
 
-  .nested-file-row {
-    margin-left: 30px;
+  .folder-icon,
+  .file-icon {
+    font-size: 1.5em;
   }
 
-  .nested-file-row-2 {
-    margin-left: 60px;
+  .nested-content {
+    padding-left: 35px;
   }
 }
 
 @media (max-width: 480px) {
   .browse-files-container {
-    padding: 12px;
+    padding: 15px;
   }
 
   .browse-title {
@@ -915,26 +898,24 @@ button:active {
     margin-bottom: 12px;
   }
 
-  .file-row {
-    padding: 8px 10px;
-    gap: 10px;
-  }
-
   .file-button {
-    padding: 6px 10px;
-    font-size: 0.85em;
+    padding: 8px 12px;
+    font-size: 0.9em;
   }
 
-  .folder-icon-container {
+  .folder-icon,
+  .file-icon {
     font-size: 1.3em;
+    min-width: 25px;
   }
 
-  .nested-file-row {
-    margin-left: 25px;
+  .file-row {
+    gap: 8px;
   }
 
-  .nested-file-row-2 {
-    margin-left: 50px;
+  .nested-content {
+    padding-left: 30px;
+    gap: 6px;
   }
 }
   .sidebar {

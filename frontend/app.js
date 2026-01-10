@@ -1332,55 +1332,63 @@ function renderDepartments(departments) {
   filesGrid.className = "files-grid";
 
   departments.forEach((dept, deptIdx) => {
-    // Department folder item
-    const deptItem = document.createElement("div");
-    deptItem.className = "file-row";
+    // Department folder row
+    const deptRow = document.createElement("div");
+    deptRow.className = "file-row";
     
-    const deptFolderIcon = document.createElement("div");
-    deptFolderIcon.className = "folder-icon-container";
-    deptFolderIcon.innerHTML = '📁';
+    const deptIcon = document.createElement("span");
+    deptIcon.className = "folder-icon";
+    deptIcon.textContent = "📁";
     
     const deptBtn = document.createElement("button");
-    deptBtn.className = "file-button dept-button";
+    deptBtn.className = "file-button folder-button";
     deptBtn.textContent = dept.name;
     
+    deptRow.appendChild(deptIcon);
+    deptRow.appendChild(deptBtn);
+    
     const deptContent = document.createElement("div");
-    deptContent.className = "folder-expand-content";
+    deptContent.className = "nested-content";
     deptContent.style.display = "none";
     
-    // Years (1, 2, 3, 4)
+    // Years
     [1, 2, 3, 4].forEach((year) => {
-      const yearItem = document.createElement("div");
-      yearItem.className = "file-row nested-file-row";
+      const yearRow = document.createElement("div");
+      yearRow.className = "file-row";
       
-      const yearFolderIcon = document.createElement("div");
-      yearFolderIcon.className = "folder-icon-container nested-icon";
-      yearFolderIcon.innerHTML = '📁';
+      const yearIcon = document.createElement("span");
+      yearIcon.className = "folder-icon";
+      yearIcon.textContent = "📁";
       
       const yearBtn = document.createElement("button");
-      yearBtn.className = "file-button year-button";
+      yearBtn.className = "file-button folder-button";
       yearBtn.textContent = `Year ${year}`;
       
+      yearRow.appendChild(yearIcon);
+      yearRow.appendChild(yearBtn);
+      
       const yearContent = document.createElement("div");
-      yearContent.className = "folder-expand-content";
+      yearContent.className = "nested-content";
       yearContent.style.display = "none";
       
       // Semesters
-      ["Odd Semester", "Even Semester"].forEach((semName) => {
-        const semKey = semName.includes("Odd") ? "odd" : "even";
-        const semItem = document.createElement("div");
-        semItem.className = "file-row nested-file-row-2";
+      [
+        { label: "Odd Semester", key: "odd" },
+        { label: "Even Semester", key: "even" }
+      ].forEach((sem) => {
+        const semRow = document.createElement("div");
+        semRow.className = "file-row";
         
-        const semFileIcon = document.createElement("div");
-        semFileIcon.className = "file-icon-container";
-        semFileIcon.innerHTML = '📄';
+        const semIcon = document.createElement("span");
+        semIcon.className = "file-icon";
+        semIcon.textContent = "📄";
         
         const semBtn = document.createElement("button");
-        semBtn.className = "file-button semester-button";
-        semBtn.textContent = semName;
+        semBtn.className = "file-button file-link-button";
+        semBtn.textContent = sem.label;
         semBtn.onclick = (e) => {
           e.stopPropagation();
-          const url = dept.years[year][semKey];
+          const url = dept.years[year][sem.key];
           if (url && url !== "#") {
             window.open(url, "_blank");
           } else {
@@ -1388,37 +1396,31 @@ function renderDepartments(departments) {
           }
         };
         
-        semItem.appendChild(semFileIcon);
-        semItem.appendChild(semBtn);
-        yearContent.appendChild(semItem);
+        semRow.appendChild(semIcon);
+        semRow.appendChild(semBtn);
+        yearContent.appendChild(semRow);
       });
       
-      // Year toggle click handler
       yearBtn.onclick = (e) => {
         e.stopPropagation();
-        const isOpen = yearContent.style.display === "none";
-        yearContent.style.display = isOpen ? "block" : "none";
-        yearFolderIcon.innerHTML = isOpen ? '📂' : '📁';
+        const isOpen = yearContent.style.display !== "none";
+        yearContent.style.display = isOpen ? "none" : "block";
+        yearIcon.textContent = isOpen ? "📁" : "📂";
       };
       
-      yearItem.appendChild(yearFolderIcon);
-      yearItem.appendChild(yearBtn);
-      yearItem.appendChild(yearContent);
-      deptContent.appendChild(yearItem);
+      deptContent.appendChild(yearRow);
+      deptContent.appendChild(yearContent);
     });
     
-    // Department toggle click handler
     deptBtn.onclick = (e) => {
       e.stopPropagation();
-      const isOpen = deptContent.style.display === "none";
-      deptContent.style.display = isOpen ? "block" : "none";
-      deptFolderIcon.innerHTML = isOpen ? '📂' : '📁';
+      const isOpen = deptContent.style.display !== "none";
+      deptContent.style.display = isOpen ? "none" : "block";
+      deptIcon.textContent = isOpen ? "📁" : "📂";
     };
     
-    deptItem.appendChild(deptFolderIcon);
-    deptItem.appendChild(deptBtn);
-    deptItem.appendChild(deptContent);
-    filesGrid.appendChild(deptItem);
+    filesGrid.appendChild(deptRow);
+    filesGrid.appendChild(deptContent);
   });
 
   browseSection.appendChild(title);
