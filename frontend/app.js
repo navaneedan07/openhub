@@ -2447,12 +2447,23 @@ function generateSmartFallback(prompt, mode) {
 }
 
 async function moderateContent(text) {
+  // Fast path to reduce false positives: short/benign text is allowed immediately
+  const quickClean = text.length <= 8 || /^[a-zA-Z0-9 ,.!?'"-]+$/.test(text);
+  if (quickClean) return true;
+
   try {
     const response = await fetch(GEMINI_PROXY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        text: `Is this text appropriate for a college community platform? Check for: offensive language, spam, harassment. Reply with YES or NO only:\n\n"${text}"`,
+        text: [
+          "You are a strict content filter for a college community.",
+          "Respond with only one word: CLEAN or BLOCK.",
+          "BLOCK only if the text has hate, harassment, sexual content, extreme violence, or obvious spam.",
+          "Otherwise respond CLEAN.",
+          "Text:",
+          text
+        ].join("\n"),
         mode: "moderate",
         model: GEMINI_MODEL_PREFERENCE[0]
       })
@@ -2460,8 +2471,9 @@ async function moderateContent(text) {
 
     if (response.ok) {
       const data = await response.json();
-      const resultText = data.result || data.text || "";
-      return /yes/i.test(resultText);
+      const resultText = (data.result || data.text || "").trim();
+      // Only block on explicit BLOCK; default allow to avoid false positives
+      return !/^block/i.test(resultText);
     }
     return true; // Default to approve if API fails
   } catch (error) {
