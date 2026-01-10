@@ -1321,67 +1321,65 @@ function renderDepartments(departments) {
   const container = document.getElementById("resourcesContainer");
   container.innerHTML = "";
   
-  const folderTree = document.createElement("div");
-  folderTree.className = "folder-tree";
+  const browseSection = document.createElement("div");
+  browseSection.className = "browse-files-container";
+  
+  const title = document.createElement("h2");
+  title.className = "browse-title";
+  title.textContent = "Browse Files";
+  
+  const filesGrid = document.createElement("div");
+  filesGrid.className = "files-grid";
 
   departments.forEach((dept, deptIdx) => {
-    // Department folder
-    const deptFolder = document.createElement("div");
-    deptFolder.className = "folder-item";
+    // Department folder item
+    const deptItem = document.createElement("div");
+    deptItem.className = "file-row";
     
-    const deptHeader = document.createElement("div");
-    deptHeader.className = "folder-header";
+    const deptFolderIcon = document.createElement("div");
+    deptFolderIcon.className = "folder-icon-container";
+    deptFolderIcon.innerHTML = '📁';
     
-    const deptToggle = document.createElement("span");
-    deptToggle.className = "folder-toggle";
-    deptToggle.textContent = "📁";
-    
-    const deptLabel = document.createElement("span");
-    deptLabel.className = "folder-label";
-    deptLabel.textContent = dept.name;
-    
-    deptHeader.appendChild(deptToggle);
-    deptHeader.appendChild(deptLabel);
+    const deptBtn = document.createElement("button");
+    deptBtn.className = "file-button dept-button";
+    deptBtn.textContent = dept.name;
     
     const deptContent = document.createElement("div");
-    deptContent.className = "folder-content";
+    deptContent.className = "folder-expand-content";
     deptContent.style.display = "none";
     
     // Years (1, 2, 3, 4)
     [1, 2, 3, 4].forEach((year) => {
-      const yearFolder = document.createElement("div");
-      yearFolder.className = "folder-item nested-level-1";
+      const yearItem = document.createElement("div");
+      yearItem.className = "file-row nested-file-row";
       
-      const yearHeader = document.createElement("div");
-      yearHeader.className = "folder-header";
+      const yearFolderIcon = document.createElement("div");
+      yearFolderIcon.className = "folder-icon-container nested-icon";
+      yearFolderIcon.innerHTML = '📁';
       
-      const yearToggle = document.createElement("span");
-      yearToggle.className = "folder-toggle";
-      yearToggle.textContent = "📁";
-      
-      const yearLabel = document.createElement("span");
-      yearLabel.className = "folder-label";
-      yearLabel.textContent = `Year ${year}`;
-      
-      yearHeader.appendChild(yearToggle);
-      yearHeader.appendChild(yearLabel);
+      const yearBtn = document.createElement("button");
+      yearBtn.className = "file-button year-button";
+      yearBtn.textContent = `Year ${year}`;
       
       const yearContent = document.createElement("div");
-      yearContent.className = "folder-content";
+      yearContent.className = "folder-expand-content";
       yearContent.style.display = "none";
       
       // Semesters
       ["Odd Semester", "Even Semester"].forEach((semName) => {
         const semKey = semName.includes("Odd") ? "odd" : "even";
-        const semFile = document.createElement("div");
-        semFile.className = "folder-item nested-level-2 file-item";
+        const semItem = document.createElement("div");
+        semItem.className = "file-row nested-file-row-2";
         
-        const semLink = document.createElement("a");
-        semLink.className = "file-link";
-        semLink.textContent = "📄 " + semName;
-        semLink.href = "#";
-        semLink.onclick = (e) => {
-          e.preventDefault();
+        const semFileIcon = document.createElement("div");
+        semFileIcon.className = "file-icon-container";
+        semFileIcon.innerHTML = '📄';
+        
+        const semBtn = document.createElement("button");
+        semBtn.className = "file-button semester-button";
+        semBtn.textContent = semName;
+        semBtn.onclick = (e) => {
+          e.stopPropagation();
           const url = dept.years[year][semKey];
           if (url && url !== "#") {
             window.open(url, "_blank");
@@ -1390,37 +1388,42 @@ function renderDepartments(departments) {
           }
         };
         
-        semFile.appendChild(semLink);
-        yearContent.appendChild(semFile);
+        semItem.appendChild(semFileIcon);
+        semItem.appendChild(semBtn);
+        yearContent.appendChild(semItem);
       });
       
       // Year toggle click handler
-      yearHeader.onclick = (e) => {
+      yearBtn.onclick = (e) => {
         e.stopPropagation();
         const isOpen = yearContent.style.display === "none";
         yearContent.style.display = isOpen ? "block" : "none";
-        yearToggle.textContent = isOpen ? "📂" : "📁";
+        yearFolderIcon.innerHTML = isOpen ? '📂' : '📁';
       };
       
-      yearFolder.appendChild(yearHeader);
-      yearFolder.appendChild(yearContent);
-      deptContent.appendChild(yearFolder);
+      yearItem.appendChild(yearFolderIcon);
+      yearItem.appendChild(yearBtn);
+      yearItem.appendChild(yearContent);
+      deptContent.appendChild(yearItem);
     });
     
     // Department toggle click handler
-    deptHeader.onclick = (e) => {
+    deptBtn.onclick = (e) => {
       e.stopPropagation();
       const isOpen = deptContent.style.display === "none";
       deptContent.style.display = isOpen ? "block" : "none";
-      deptToggle.textContent = isOpen ? "📂" : "📁";
+      deptFolderIcon.innerHTML = isOpen ? '📂' : '📁';
     };
     
-    deptFolder.appendChild(deptHeader);
-    deptFolder.appendChild(deptContent);
-    folderTree.appendChild(deptFolder);
+    deptItem.appendChild(deptFolderIcon);
+    deptItem.appendChild(deptBtn);
+    deptItem.appendChild(deptContent);
+    filesGrid.appendChild(deptItem);
   });
 
-  container.appendChild(folderTree);
+  browseSection.appendChild(title);
+  browseSection.appendChild(filesGrid);
+  container.appendChild(browseSection);
 }
 
 function bindProfileForm(user) {
